@@ -25,6 +25,20 @@ render/*.py + analysis/*.py (local)
     per-case JSONs --> PNGs, GIFs, comparison tables, markdown reports
 ```
 
+### Before and after
+
+The cooking curves below show the same prompt before and after iterative tuning (both per-region normalized to 0–1 for direct comparison).
+
+The "before" curve is from a first-draft prompt. Several regions show artifact peaks at L0 from near-zero values. `current_message` has a narrow, isolated spike around L42–45 but no sustained dominance. `task_entity` unexpectedly takes over the output formatting layers (L56+), and the mid-layers are noisy with no clear phase differentiation:
+
+![Before tuning — attention is unfocused](docs/images/cooking_before.png)
+
+After several rounds of restructuring guided by the pipeline's output — adjusting region boundaries, reordering task sections, adding structural markers — the curves show clean phase progression. `directive` and `conversation_turns` peak first (L3), rules regions differentiate through the early-mid layers, `current_message` sustains dominance through the focus layers (L40–50), and `output_format` cleanly takes over the final layers. The mid-layer oscillations are structured rather than noisy:
+
+![After tuning — attention is focused and phase-separated](docs/images/cooking_after.png)
+
+Every change in that tuning process was validated by re-running the pipeline and comparing curves, rather than relying on whether the model's text output "seemed better."
+
 ## Quick start
 
 ```bash
@@ -236,25 +250,15 @@ infra/
 
 ## Why this exists
 
-This pipeline was originally built to tune the system prompt for [Mira](https://github.com/taylorsatula/mira-OSS), a persistent digital entity with self-directed memory and context window management. The techniques generalize to any prompt and any model.
+This pipeline was originally built to tune the subcortical prompt for [Mira](https://github.com/taylorsatula/mira-OSS), a persistent digital entity with self-directed memory and context window management. Subcortical is a cheap, fast LLM call that preprocesses every user message before the main model turn, rewriting fragmentary queries into retrieval-optimized searches and deciding which memories to keep in context. Because it runs on a small model in a single forward pass with no reasoning, every word in the prompt either drives attention or wastes it. The techniques generalize to any prompt and any model.
 
 Prompt engineering is typically done by feel — you tweak wording, reorder sections, adjust emphasis, then eyeball the outputs to see if they "look right." But this approach is subjective and fragile. A change that seems to improve one case might silently degrade others, and you have no way to know without exhaustive manual testing.
 
 This toolkit replaces guesswork with empirical measurement. By capturing exactly how the model distributes attention across every region of your prompt at every layer, you can see with certainty whether a change is helping or harming — and *where* in the model's processing the effect occurs.
 
-### Before and after
+### Layer-by-layer attention heatmap
 
-The cooking curves below show the same prompt before and after iterative tuning (both per-region normalized to 0–1 for direct comparison).
-
-The "before" curve is from a first-draft prompt. Several regions show artifact peaks at L0 from near-zero values. `current_message` has a narrow, isolated spike around L42–45 but no sustained dominance. `task_entity` unexpectedly takes over the output formatting layers (L56+), and the mid-layers are noisy with no clear phase differentiation:
-
-![Before tuning — attention is unfocused](docs/images/cooking_before.png)
-
-After several rounds of restructuring guided by the pipeline's output — adjusting region boundaries, reordering task sections, adding structural markers — the curves show clean phase progression. `directive` and `conversation_turns` peak first (L3), rules regions differentiate through the early-mid layers, `current_message` sustains dominance through the focus layers (L40–50), and `output_format` cleanly takes over the final layers. The mid-layer oscillations are structured rather than noisy:
-
-![After tuning — attention is focused and phase-separated](docs/images/cooking_after.png)
-
-Every change in that tuning process was validated by re-running the pipeline and comparing curves, rather than relying on whether the model's text output "seemed better."
+![Per-token attention heatmap animated across layers](docs/images/heatmap.gif)
 
 ## Model support
 
