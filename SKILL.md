@@ -124,17 +124,15 @@ Search for instances with CUDA 12.x base image and sufficient VRAM. Prefer singl
 ### Bootstrap
 
 ```bash
-# Set env vars before running
-export HF_TOKEN="your_token"
-export MODEL_ID="Qwen/Qwen3-32B"  # or any HF model
-
 scp infra/vastai_setup.sh gpu:/workspace/
 scp src/prompt_mechinterp/engine/run_analysis.py gpu:/workspace/
 scp test_cases.json gpu:/workspace/
-ssh gpu 'bash /workspace/vastai_setup.sh'
+
+# MODEL_ID is required — no default
+ssh gpu 'HF_TOKEN=your_token MODEL_ID=meta-llama/Llama-3-8B bash /workspace/vastai_setup.sh'
 ```
 
-The setup script installs torch/transformers/accelerate, authenticates with HuggingFace (if HF_TOKEN set), and downloads model weights.
+The setup script installs torch/transformers/accelerate, authenticates with HuggingFace (if HF_TOKEN set), and downloads model weights. `MODEL_ID` must be specified — the script will error if it's missing.
 
 ### Execution Monitoring
 

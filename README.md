@@ -69,16 +69,20 @@ python -m prompt_mechinterp.prep.inputs \
 ### 3. Run analysis on GPU
 
 ```bash
-# scp the self-contained engine + test cases to your GPU box
+# scp the self-contained engine, setup script, and test cases to your GPU box
 scp src/prompt_mechinterp/engine/run_analysis.py gpu:/workspace/
+scp infra/vastai_setup.sh gpu:/workspace/
 scp test_cases.json gpu:/workspace/
 
-# On the GPU box
-python run_analysis.py \
-    --input test_cases.json \
-    --output results/ \
-    --model-path /workspace/models/YourModel \
-    --tracked-tokens "<" "keyword"
+# Bootstrap the GPU box (MODEL_ID is required)
+ssh gpu 'MODEL_ID=meta-llama/Llama-3-8B bash /workspace/vastai_setup.sh'
+
+# Run analysis
+ssh gpu 'python /workspace/run_analysis.py \
+    --input /workspace/test_cases.json \
+    --output /workspace/results/ \
+    --model-path /workspace/models/Llama-3-8B \
+    --tracked-tokens "<" "keyword"'
 ```
 
 ### 4. Render results

@@ -7,7 +7,7 @@
 # Usage:
 #   scp src/prompt_mechinterp/engine/run_analysis.py vastai:/workspace/
 #   scp test_cases.json vastai:/workspace/
-#   ssh vastai 'bash /workspace/vastai_setup.sh'
+#   ssh vastai 'MODEL_ID=meta-llama/Llama-3-8B bash /workspace/vastai_setup.sh'
 
 set -euo pipefail
 
@@ -29,8 +29,11 @@ if [ -n "${HF_TOKEN:-}" ]; then
 fi
 
 # Pre-download model weights
-# Change the model ID and local_dir for your target model.
-MODEL_ID="${MODEL_ID:-Qwen/Qwen3-32B}"
+# Set MODEL_ID before running, e.g.: MODEL_ID=meta-llama/Llama-3-8B bash vastai_setup.sh
+if [ -z "${MODEL_ID:-}" ]; then
+    echo "ERROR: MODEL_ID is required. Example: MODEL_ID=Qwen/Qwen3-32B bash vastai_setup.sh"
+    exit 1
+fi
 MODEL_DIR="${MODEL_DIR:-/workspace/models/$(basename $MODEL_ID)}"
 
 echo "=== Downloading $MODEL_ID ==="
