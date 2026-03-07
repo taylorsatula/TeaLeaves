@@ -11,7 +11,7 @@ dependencies = ["numpy", "Pillow"]
 
 [project.optional-dependencies]
 gpu = ["torch", "transformers", "accelerate", "safetensors", "huggingface_hub"]
-dev = ["pytest"]
+dev = ["pytest", "mypy"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/prompt_mechinterp"]

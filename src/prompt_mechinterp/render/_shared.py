@@ -4,7 +4,7 @@ Extracted from render_heatmap.py (primary donor) with duplicates reconciled
 from render_cooking_curves.py and render_aggregate_cooking.py.
 """
 
-from typing import Dict, List, Tuple
+from .._types import RegionInfo, TokenRect
 
 import numpy as np
 from PIL import ImageDraw, ImageFont
@@ -92,7 +92,7 @@ def get_font(size: int) -> ImageFont.FreeTypeFont:
             return ImageFont.truetype(path, size)
         except (IOError, OSError):
             continue
-    return ImageFont.load_default()
+    return ImageFont.load_default()  # type: ignore[return-value]
 
 
 # ============================================================================
@@ -154,7 +154,7 @@ def _build_coolwarm_lut() -> np.ndarray:
     return _interpolate_lut(points)
 
 
-def _interpolate_lut(points: list) -> np.ndarray:
+def _interpolate_lut(points: list[tuple[int, int, int, int]]) -> np.ndarray:
     """Interpolate control points into a 256-entry RGB LUT."""
     lut = np.zeros((256, 3), dtype=np.uint8)
     for i in range(len(points) - 1):
@@ -213,7 +213,7 @@ def gaussian_smooth(values: np.ndarray, sigma: float) -> np.ndarray:
 def normalize_weights(
     weights: np.ndarray,
     clip_low: float = 5.0,
-    mask: np.ndarray = None,
+    mask: np.ndarray | None = None,
 ) -> np.ndarray:
     """Normalize to [0, 1] via rank-based histogram equalization.
 
@@ -264,14 +264,14 @@ def normalize_weights(
 
 def colormap_lookup(
     normed: np.ndarray, lut: np.ndarray
-) -> List[Tuple[int, int, int]]:
+) -> list[tuple[int, int, int]]:
     """Map normalized [0,1] values to RGB tuples via LUT."""
     indices = np.clip((normed * 255).astype(int), 0, 255)
     rgb = lut[indices]
     return [(int(r), int(g), int(b)) for r, g, b in rgb]
 
 
-def parse_layer_spec(spec: str, num_layers: int = 64) -> List[int]:
+def parse_layer_spec(spec: str, num_layers: int = 64) -> list[int]:
     """Parse layer specification: 'final', 'all', '48', '0,16,32,48,60-63'."""
     spec = spec.strip().lower()
     if spec == "all":
@@ -281,7 +281,7 @@ def parse_layer_spec(spec: str, num_layers: int = 64) -> List[int]:
         start = max(0, num_layers - FINAL_LAYERS)
         return list(range(start, num_layers))
 
-    layers = set()
+    layers: set[int] = set()
     for part in spec.split(","):
         part = part.strip()
         if "-" in part:
@@ -328,14 +328,14 @@ def is_newline_token(label: str) -> bool:
 # ============================================================================
 
 def layout_tokens(
-    token_labels: List[str],
-    colors: List[Tuple[int, int, int]],
-    piece_boundaries: Dict,
-    region_map: Dict,
+    token_labels: list[str],
+    colors: list[tuple[int, int, int]],
+    piece_boundaries: dict[str, RegionInfo],
+    region_map: dict[str, RegionInfo],
     show_regions: bool,
     font: ImageFont.FreeTypeFont,
     content_width: int,
-) -> Tuple[List[dict], int]:
+) -> tuple[list[TokenRect], int]:
     """Compute x/y positions for every token using natural text flow.
 
     Tokens are placed left-to-right. When a token would overflow the line,
@@ -350,7 +350,7 @@ def layout_tokens(
     for piece_name, info in piece_boundaries.items():
         piece_starts[info["tok_start"]] = piece_name
 
-    region_starts: Dict[int, str] = {}
+    region_starts: dict[int, str] = {}
     if show_regions:
         for region_name, info in region_map.items():
             if region_name in (
@@ -359,7 +359,7 @@ def layout_tokens(
                 continue
             region_starts[info["tok_start"]] = region_name
 
-    rects = []
+    rects: list[TokenRect] = []
     cursor_x = 0.0
     cursor_y = 0.0
 
@@ -417,9 +417,9 @@ def layout_tokens(
 def draw_gradient_rect(
     draw: ImageDraw.ImageDraw,
     x: int, y: int, w: int, h: int,
-    color_left: Tuple[int, int, int],
-    color_right: Tuple[int, int, int],
-):
+    color_left: tuple[int, int, int],
+    color_right: tuple[int, int, int],
+) -> None:
     """Draw a rectangle with a horizontal gradient between two colors."""
     w_int = max(1, int(w))
     for col in range(w_int):

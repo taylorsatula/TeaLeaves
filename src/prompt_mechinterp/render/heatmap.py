@@ -11,7 +11,7 @@ Usage:
 
 import argparse
 from pathlib import Path
-from typing import Dict, List, Tuple
+from .._types import RegionInfo
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -141,10 +141,10 @@ def _draw_legend(
 
 
 def render_heatmap(
-    token_labels: List[str],
+    token_labels: list[str],
     weights: np.ndarray,
-    region_map: Dict,
-    piece_boundaries: Dict,
+    region_map: dict[str, RegionInfo],
+    piece_boundaries: dict[str, RegionInfo],
     width: int,
     smoothing: float,
     colormap_name: str,
@@ -210,7 +210,7 @@ def render_heatmap(
     for piece_name, info in piece_boundaries.items():
         piece_starts[info["tok_start"]] = piece_name
 
-    region_starts: Dict[int, str] = {}
+    region_starts: dict[int, str] = {}
     if show_regions:
         for region_name, info in region_map.items():
             if region_name in (
@@ -307,7 +307,7 @@ def render_heatmap(
     return img
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Render per-token attention heatmap from MI analysis results",
         formatter_class=argparse.RawDescriptionHelpFormatter,

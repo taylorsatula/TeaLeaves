@@ -11,7 +11,7 @@ Usage:
 
 import argparse
 from pathlib import Path
-from typing import Dict, List
+from typing import Any
 
 import numpy as np
 
@@ -30,7 +30,7 @@ DEFAULT_REGIONS = [
 ]
 
 # Variant line styles for comparison mode
-VARIANT_STYLES = [
+VARIANT_STYLES: list[dict[str, Any]] = [
     {"dash": None, "alpha": 255},
     {"dash": [8, 4], "alpha": 200},
     {"dash": [3, 3], "alpha": 180},
@@ -38,15 +38,15 @@ VARIANT_STYLES = [
 
 
 def render_single_variant(
-    curves: Dict[str, np.ndarray],
+    curves: dict[str, np.ndarray],
     dirname: str,
-    regions: List[str],
+    regions: list[str],
     normalize: str,
     output: Path,
     width: int = 1400,
     height: int = 700,
     show_bands: bool = True,
-):
+) -> None:
     """Render aggregate cooking curve for a single variant with optional std bands."""
     n_layers = next(iter(curves.values())).shape[1] if curves else 64
     n_samples = next(iter(curves.values())).shape[0] if curves else 0
@@ -115,7 +115,7 @@ def render_single_variant(
         region_stats[region] = (mean, std)
 
     # Y-axis scaling
-    y_max = 0
+    y_max: float = 0
     for region, (mean, std) in region_stats.items():
         y_max = max(y_max, np.max(mean + std))
     y_max *= 1.1
@@ -231,13 +231,13 @@ def render_single_variant(
 
 
 def render_comparison(
-    all_curves: Dict[str, Dict[str, np.ndarray]],
-    regions: List[str],
+    all_curves: dict[str, dict[str, np.ndarray]],
+    regions: list[str],
     normalize: str,
     output: Path,
     width: int = 1400,
     height: int = 700,
-):
+) -> None:
     """Render overlaid cooking curves from multiple variants."""
     # Detect num_layers from data
     n_layers = 64
@@ -292,8 +292,8 @@ def render_comparison(
         )
 
     # Compute all means
-    all_stats: Dict[str, Dict[str, np.ndarray]] = {}
-    y_max = 0
+    all_stats: dict[str, dict[str, np.ndarray]] = {}
+    y_max: float = 0
     for vname, curves in all_curves.items():
         all_stats[vname] = {}
         for region in regions:
@@ -424,7 +424,7 @@ def render_comparison(
     print(f"Saved: {output} ({width}x{height})")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Aggregate cooking curves")
     parser.add_argument(
         "--base-dir", type=str, required=True, help="Base directory containing variant result dirs"

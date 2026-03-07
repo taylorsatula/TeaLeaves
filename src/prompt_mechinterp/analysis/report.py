@@ -12,7 +12,7 @@ import argparse
 import json
 from math import isnan
 from pathlib import Path
-from typing import Dict, List
+from typing import Any
 
 import numpy as np
 
@@ -22,9 +22,10 @@ from .metrics import (
     cooking_curve_stats,
     safe_mean,
 )
+from .._types import ContextBleedResult, ExtendedCookingStats
 
 
-def _load_samples(dirpath: Path) -> List[dict]:
+def _load_samples(dirpath: Path) -> list[dict[str, Any]]:
     samples = []
     for f in sorted(dirpath.glob("sample_*.json")):
         with open(f) as fh:
@@ -32,14 +33,14 @@ def _load_samples(dirpath: Path) -> List[dict]:
     return samples
 
 
-def _auto_regions(samples: List[dict]) -> List[str]:
+def _auto_regions(samples: list[dict[str, Any]]) -> list[str]:
     if not samples:
         return []
     rm = samples[0].get("region_map", {})
     return sorted(r for r in rm if r not in SKIP_REGIONS)
 
 
-def _detect_num_layers(samples: List[dict]) -> int:
+def _detect_num_layers(samples: list[dict[str, Any]]) -> int:
     for s in samples:
         pt = s.get("per_token_attention", {})
         for pos_data in pt.values():
@@ -75,13 +76,13 @@ def _classify_story(peak_layer: int, ratio: float, num_layers: int = 64) -> str:
 
 
 def compute_cooking_table(
-    samples: List[dict],
-    regions: List[str],
+    samples: list[dict[str, Any]],
+    regions: list[str],
     position: str = "terminal",
     num_layers: int = 64,
-) -> Dict[str, dict]:
+) -> dict[str, ExtendedCookingStats]:
     """Compute cooking curve stats for all regions across samples."""
-    region_stats = {}
+    region_stats: dict[str, ExtendedCookingStats] = {}
 
     for region_name in regions:
         all_trajectories = []
@@ -104,7 +105,7 @@ def compute_cooking_table(
         )
         story = _classify_story(stats["peak_layer"], ratio, num_layers)
 
-        region_stats[region_name] = {
+        region_stats[region_name] = {  # type: ignore[typeddict-item]
             **stats,
             "peak_terminal_ratio": ratio,
             "story": story,
@@ -116,12 +117,12 @@ def compute_cooking_table(
 
 
 def compute_context_bleed(
-    samples: List[dict],
+    samples: list[dict[str, Any]],
     conv_region: str = "conversation_turns",
     curr_region: str = "current_message",
     position: str = "terminal",
     num_layers: int = 64,
-) -> dict:
+) -> ContextBleedResult:
     """Compute context bleed ratio."""
     ratios = []
     conv_attns = []
@@ -156,10 +157,10 @@ def compute_context_bleed(
 def write_experiment_report(
     exp_key: str,
     exp_label: str,
-    samples: List[dict],
-    regions: List[str],
-    baseline_stats: Dict[str, dict],
-    baseline_bleed: dict,
+    samples: list[dict[str, Any]],
+    regions: list[str],
+    baseline_stats: dict[str, ExtendedCookingStats],
+    baseline_bleed: dict[str, Any],
     num_layers: int,
     output_dir: Path,
 ) -> Path:
@@ -273,7 +274,7 @@ def write_experiment_report(
     return report_path
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Generate markdown experiment reports",
     )
@@ -307,7 +308,7 @@ def main():
 
     # Load all experiments
     all_cooking = {}
-    all_bleed = {}
+    all_bleed: dict[str, Any] = {}
     all_samples = {}
 
     for exp in experiments:
@@ -329,9 +330,13 @@ def main():
         print(f"  Analyzed {exp['key']}: {len(samples)} samples, {len(regions)} regions")
 
     # Write reports
-    baseline_key = experiments[0]["key"] if experiments else None
+    if not experiments:
+        print(f"\nAll reports in: {output_dir}")
+        return
+
+    baseline_key = experiments[0]["key"]
     baseline_stats = all_cooking.get(baseline_key, {})
-    baseline_bleed = all_bleed.get(baseline_key, {})
+    baseline_bleed: dict[str, Any] = all_bleed.get(baseline_key, {})
 
     for exp in experiments:
         if exp["key"] not in all_samples:

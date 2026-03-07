@@ -21,7 +21,7 @@ import argparse
 import json
 from math import isnan
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -36,7 +36,7 @@ from .metrics import (
 )
 
 
-def _load_variant(dirpath: Path) -> List[dict]:
+def _load_variant(dirpath: Path) -> list[dict[str, Any]]:
     """Load all sample_*.json files from a directory."""
     samples = []
     for f in sorted(dirpath.glob("sample_*.json")):
@@ -45,7 +45,7 @@ def _load_variant(dirpath: Path) -> List[dict]:
     return samples
 
 
-def _auto_discover_regions(samples: List[dict]) -> List[str]:
+def _auto_discover_regions(samples: list[dict[str, Any]]) -> list[str]:
     """Get all regions from the first sample, excluding containers."""
     if not samples:
         return []
@@ -53,7 +53,7 @@ def _auto_discover_regions(samples: List[dict]) -> List[str]:
     return sorted(r for r in region_map if r not in SKIP_REGIONS)
 
 
-def _detect_num_layers(samples: List[dict]) -> int:
+def _detect_num_layers(samples: list[dict[str, Any]]) -> int:
     """Detect number of layers from data."""
     for sample in samples:
         attn = sample.get("attention", {})
@@ -73,8 +73,8 @@ def _detect_seed(case_id: str) -> str:
 
 
 def table_terminal_attention(
-    variants: Dict[str, List[dict]],
-    regions: List[str],
+    variants: dict[str, list[dict[str, Any]]],
+    regions: list[str],
     position: str,
     num_layers: int = 64,
 ) -> None:
@@ -84,7 +84,7 @@ def table_terminal_attention(
     print_header(f"Per-Region Terminal Attention ({position}, L{layer_start}-{layer_end} avg)")
 
     first_label = next(iter(variants))
-    baseline_vals: Dict[str, float] = {}
+    baseline_vals: dict[str, float] = {}
 
     header = f"  {'Region':<22}"
     for label in variants:
@@ -116,8 +116,8 @@ def table_terminal_attention(
 
 
 def table_region_ratios(
-    variants: Dict[str, List[dict]],
-    ratio_pairs: List[Tuple[str, str]],
+    variants: dict[str, list[dict[str, Any]]],
+    ratio_pairs: list[tuple[str, str]],
     position: str,
     num_layers: int = 64,
 ) -> None:
@@ -146,8 +146,8 @@ def table_region_ratios(
 
 
 def table_per_token_density(
-    variants: Dict[str, List[dict]],
-    regions: List[str],
+    variants: dict[str, list[dict[str, Any]]],
+    regions: list[str],
     position: str,
     num_layers: int = 64,
 ) -> None:
@@ -179,8 +179,8 @@ def table_per_token_density(
 
 
 def table_logit_lens(
-    variants: Dict[str, List[dict]],
-    tracked_tokens: List[str],
+    variants: dict[str, list[dict[str, Any]]],
+    tracked_tokens: list[str],
     position: str,
     num_layers: int,
 ) -> None:
@@ -203,7 +203,7 @@ def table_logit_lens(
         print(f"  {'─' * 14}" + "".join(f" {'─' * 6}" for _ in check_layers))
 
         for label, samples in variants.items():
-            layer_ranks: Dict[int, list] = {l: [] for l in check_layers}
+            layer_ranks: dict[int, list[float]] = {l: [] for l in check_layers}
             for sample in samples:
                 ll = sample.get("logit_lens", {}).get(position, [])
                 for entry in ll:
@@ -225,8 +225,8 @@ def table_logit_lens(
 
 
 def table_by_seed(
-    variants: Dict[str, List[dict]],
-    regions: List[str],
+    variants: dict[str, list[dict[str, Any]]],
+    regions: list[str],
     position: str,
 ) -> None:
     """Per-seed breakdown for variants with multiple seeds."""
@@ -255,7 +255,7 @@ def table_by_seed(
             print(row)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Generic N-variant MI comparison",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -295,7 +295,7 @@ def main():
     show_all = "all" in metrics
 
     # Parse variants
-    variants: Dict[str, List[dict]] = {}
+    variants: dict[str, list[dict[str, Any]]] = {}
     for spec in args.variants:
         if ":" in spec:
             dirname, label = spec.split(":", 1)

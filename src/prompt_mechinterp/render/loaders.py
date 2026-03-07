@@ -7,20 +7,22 @@ renderer, but they all share the same JSON traversal pattern.
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any
+
+from .._types import RegionInfo
 
 import numpy as np
 
 from ._shared import parse_layer_spec
 
 
-def _load_result_json(path: str) -> dict:
+def _load_result_json(path: str) -> dict[str, Any]:
     """Load and validate a result JSON file."""
     with open(path) as f:
         return json.load(f)
 
 
-def _require_per_token(data: dict) -> None:
+def _require_per_token(data: dict[str, Any]) -> None:
     """Validate that per-token attention data exists."""
     if "per_token_attention" not in data:
         print("ERROR: This result JSON has no per-token attention data.")
@@ -32,7 +34,7 @@ def _require_per_token(data: dict) -> None:
         sys.exit(1)
 
 
-def _require_position(per_token: dict, position: str) -> None:
+def _require_position(per_token: dict[str, Any], position: str) -> None:
     """Validate that the requested position exists in the data."""
     if position not in per_token:
         available = list(per_token.keys())
@@ -40,7 +42,7 @@ def _require_position(per_token: dict, position: str) -> None:
         sys.exit(1)
 
 
-def _extract_piece_boundaries(region_map: dict) -> dict:
+def _extract_piece_boundaries(region_map: dict[str, RegionInfo]) -> dict[str, RegionInfo]:
     """Extract top-level piece boundaries from the region map."""
     piece_boundaries = {}
     for piece_name in ["system_prompt", "user_message", "response"]:
@@ -53,7 +55,7 @@ def load_heatmap_data(
     result_path: str,
     position: str,
     layer_spec: str,
-) -> Tuple[List[str], np.ndarray, Dict, Dict]:
+) -> tuple[list[str], np.ndarray, dict[str, RegionInfo], dict[str, RegionInfo]]:
     """Load and average per-token attention from result JSON.
 
     Returns:
@@ -95,7 +97,7 @@ def load_heatmap_data(
 def load_cooking_data(
     result_path: str,
     position: str,
-) -> Tuple[Dict[str, Dict], Dict[int, np.ndarray], List[str]]:
+) -> tuple[dict[str, RegionInfo], dict[int, np.ndarray], list[str]]:
     """Load per-layer attention data and region map from result JSON.
 
     Returns:
@@ -124,7 +126,7 @@ def load_cooking_data(
 def load_all_layers(
     result_path: str,
     position: str,
-) -> Tuple[List[str], Dict[int, np.ndarray], Dict, Dict]:
+) -> tuple[list[str], dict[int, np.ndarray], dict[str, RegionInfo], dict[str, RegionInfo]]:
     """Load per-token attention for ALL layers from result JSON.
 
     Returns:
@@ -153,14 +155,14 @@ def load_all_layers(
 def load_variant_curves(
     base_path: Path,
     dirname: str,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Load all samples in a directory, return {region: (n_samples, n_layers) array}.
 
     Uses per-region attention from the 'attention' field (not per-token),
     at the 'terminal' position.
     """
     dirpath = base_path / dirname
-    all_data: Dict[str, list] = {}
+    all_data: dict[str, list[list[float]]] = {}
 
     for f in sorted(dirpath.glob("sample_*.json")):
         with open(f) as fh:

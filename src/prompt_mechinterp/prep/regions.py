@@ -35,10 +35,12 @@ Detection strategies:
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any
+
+from .._types import CharRegionInfo
 
 
-def load_region_config(path: str) -> dict:
+def load_region_config(path: str) -> dict[str, Any]:
     """Load region configuration from a JSON file."""
     with open(path) as f:
         return json.load(f)
@@ -46,9 +48,9 @@ def load_region_config(path: str) -> dict:
 
 def annotate_text(
     text: str,
-    region_defs: List[dict],
+    region_defs: list[dict[str, Any]],
     text_offset: int = 0,
-) -> Dict[str, Dict[str, int]]:
+) -> dict[str, CharRegionInfo]:
     """Find character-level boundaries for each region definition in text.
 
     Args:
@@ -62,7 +64,7 @@ def annotate_text(
     Returns:
         Dict mapping region_name -> {"char_start": int, "char_end": int}
     """
-    regions = {}
+    regions: dict[str, CharRegionInfo] = {}
 
     for defn in region_defs:
         name = defn["name"]
@@ -94,8 +96,8 @@ def annotate_text(
 
 
 def _find_boundaries(
-    text: str, defn: dict
-) -> Tuple[Optional[int], Optional[int]]:
+    text: str, defn: dict[str, Any]
+) -> tuple[int | None, int | None]:
     """Find start and end positions for a region definition."""
 
     # Strategy 1: Explicit character offsets
@@ -138,8 +140,8 @@ def _find_boundaries(
 
 
 def parse_query_positions(
-    config: dict,
-) -> dict:
+    config: dict[str, Any],
+) -> dict[str, Any]:
     """Extract query position definitions from region config.
 
     Returns dict suitable for inclusion in test_cases.json.
@@ -147,6 +149,6 @@ def parse_query_positions(
     return config.get("query_positions", {})
 
 
-def parse_tracked_tokens(config: dict) -> List[str]:
+def parse_tracked_tokens(config: dict[str, Any]) -> list[str]:
     """Extract tracked token list from region config."""
     return config.get("tracked_tokens", [])

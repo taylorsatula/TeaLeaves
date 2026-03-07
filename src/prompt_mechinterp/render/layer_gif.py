@@ -12,7 +12,7 @@ Usage:
 import argparse
 import os
 from pathlib import Path
-from typing import Dict, List
+from .._types import RegionInfo
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -40,10 +40,10 @@ from .loaders import load_all_layers
 
 
 def render_single_layer_frame(
-    token_labels: List[str],
+    token_labels: list[str],
     weights: np.ndarray,
-    region_map: Dict,
-    piece_boundaries: Dict,
+    region_map: dict[str, RegionInfo],
+    piece_boundaries: dict[str, RegionInfo],
     layer: int,
     width: int,
     smoothing: float,
@@ -183,7 +183,7 @@ def render_single_layer_frame(
     return img
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Render animated GIF of attention sweeping through all layers",
     )

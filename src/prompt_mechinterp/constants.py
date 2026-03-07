@@ -19,7 +19,7 @@ _DISPLAY_PHASE_FRACTIONS = [
 ]
 
 
-def display_phases(num_layers: int) -> list:
+def display_phases(num_layers: int) -> list[tuple[str, int, int]]:
     """Return display phases scaled to the given layer count."""
     last = num_layers - 1
     return [
@@ -39,7 +39,7 @@ _ANALYSIS_PHASE_FRACTIONS = {
 }
 
 
-def analysis_phases(num_layers: int) -> dict:
+def analysis_phases(num_layers: int) -> dict[str, tuple[int, int]]:
     """Return analysis phases scaled to the given layer count."""
     last = num_layers - 1
     return {

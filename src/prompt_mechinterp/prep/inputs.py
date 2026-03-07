@@ -12,17 +12,17 @@ Usage:
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Any
 
 from .regions import annotate_text, load_region_config, parse_query_positions, parse_tracked_tokens
 
 
 def build_test_cases(
     system_prompt: str,
-    conversations: List[dict],
-    region_config: dict,
+    conversations: list[dict[str, Any]],
+    region_config: dict[str, Any],
     num_samples: int = 0,
-) -> dict:
+) -> dict[str, Any]:
     """Build test_cases.json structure from inputs.
 
     Args:
@@ -44,7 +44,7 @@ def build_test_cases(
     system_regions = annotate_text(system_prompt, sys_region_defs)
 
     # Build cases
-    cases = []
+    cases: list[dict[str, Any]] = []
     user_region_defs = region_config.get("user_message", {}).get("regions", [])
 
     for conv in conversations:
@@ -91,7 +91,7 @@ def build_test_cases(
     return result
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Assemble test_cases.json for MI analysis",
     )

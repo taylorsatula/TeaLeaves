@@ -5,15 +5,16 @@ analyze_experiments.py, and analyze_v19_multiseed.py.
 """
 
 from math import isnan
-from typing import Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
 from ..constants import FINAL_LAYERS
+from .._types import CookingStats
 
 
 def avg_final_layers(
-    attention_data: dict,
+    attention_data: dict[str, Any],
     position: str,
     region: str,
     n_layers: int = FINAL_LAYERS,
@@ -41,12 +42,12 @@ def avg_final_layers(
 
 
 def compute_region_ratio(
-    samples: List[dict],
+    samples: list[dict[str, Any]],
     region_a: str,
     region_b: str,
     position: str = "terminal",
     n_layers: int = FINAL_LAYERS,
-) -> List[float]:
+) -> list[float]:
     """Compute per-sample ratio of region_a / region_b attention.
 
     Generalized "context bleed" metric. For the original subcortical use case,
@@ -74,7 +75,7 @@ def compute_per_token_density(
 
 
 def compute_region_attention_per_layer(
-    sample: dict,
+    sample: dict[str, Any],
     region_name: str,
     position: str = "terminal",
     num_layers: int = 64,
@@ -114,7 +115,7 @@ def compute_region_attention_per_layer(
     return result
 
 
-def cooking_curve_stats(curve: np.ndarray) -> dict:
+def cooking_curve_stats(curve: np.ndarray) -> CookingStats:
     """Compute summary statistics for a cooking curve.
 
     Returns dict with peak_layer, peak_value, terminal_value,
@@ -154,19 +155,19 @@ def phase_mean(
     return float(np.mean(clean)) if len(clean) > 0 else float("nan")
 
 
-def safe_mean(values: list) -> float:
+def safe_mean(values: list[float]) -> float:
     """NaN-safe mean."""
     clean = [v for v in values if not isnan(v)]
     return float(np.mean(clean)) if clean else float("nan")
 
 
-def safe_median(values: list) -> float:
+def safe_median(values: list[float]) -> float:
     """NaN-safe median."""
     clean = sorted(v for v in values if not isnan(v))
     return float(np.median(clean)) if clean else float("nan")
 
 
-def safe_std(values: list) -> float:
+def safe_std(values: list[float]) -> float:
     """NaN-safe standard deviation (ddof=1)."""
     clean = [v for v in values if not isnan(v)]
     return float(np.std(clean, ddof=1)) if len(clean) > 1 else float("nan")

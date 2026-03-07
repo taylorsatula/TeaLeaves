@@ -11,7 +11,7 @@ Usage:
 import argparse
 import math
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from .._types import RegionInfo
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -39,10 +39,10 @@ LINE_WIDTH = 2
 
 
 def compute_region_trajectories(
-    region_map: Dict[str, Dict],
-    layer_weights: Dict[int, np.ndarray],
-    regions: List[str],
-) -> Dict[str, np.ndarray]:
+    region_map: dict[str, RegionInfo],
+    layer_weights: dict[int, np.ndarray],
+    regions: list[str],
+) -> dict[str, np.ndarray]:
     """Compute mean attention per token for each region at each layer.
 
     Returns:
@@ -70,7 +70,7 @@ def compute_region_trajectories(
     return trajectories
 
 
-def _nice_ticks(vmin: float, vmax: float, n_ticks: int = 5) -> List[float]:
+def _nice_ticks(vmin: float, vmax: float, n_ticks: int = 5) -> list[float]:
     """Generate human-readable tick values for an axis range."""
     if vmax <= vmin:
         return [vmin]
@@ -97,13 +97,13 @@ def _nice_ticks(vmin: float, vmax: float, n_ticks: int = 5) -> List[float]:
 
 
 def render_cooking_curves(
-    trajectories: Dict[str, np.ndarray],
+    trajectories: dict[str, np.ndarray],
     position: str,
     result_path: str,
     width: int = 1400,
     height: int = 700,
     normalize_mode: str = "raw",
-    highlight: Optional[List[str]] = None,
+    highlight: list[str] | None = None,
 ) -> Image.Image:
     """Render the cooking curve chart as a PIL Image."""
     img = Image.new("RGB", (width, height), BG_COLOR)
@@ -150,7 +150,7 @@ def render_cooking_curves(
         x_ticks.append(n_layers - 1)
     y_ticks = _nice_ticks(y_min, y_max, 6)
 
-    def to_px(layer: int, val: float) -> Tuple[int, int]:
+    def to_px(layer: int, val: float) -> tuple[int, int]:
         x = chart_x0 + int(layer / max(1, n_layers - 1) * chart_w)
         y = chart_y1 - int((val - y_min) / max(1e-15, y_max - y_min) * chart_h)
         return x, y
@@ -207,8 +207,8 @@ def render_cooking_curves(
         curve = plot_data[name]
         color = REGION_PALETTE[idx % len(REGION_PALETTE)]
 
-        if dimmed and name not in highlight:
-            color = tuple(c // 4 for c in color)
+        if highlight is not None and name not in highlight:
+            color = (color[0] // 4, color[1] // 4, color[2] // 4)
             lw = 1
         else:
             lw = LINE_WIDTH
@@ -235,8 +235,8 @@ def render_cooking_curves(
     for name in sorted_regions:
         idx = region_names.index(name)
         color = REGION_PALETTE[idx % len(REGION_PALETTE)]
-        if dimmed and name not in (highlight or []):
-            color = tuple(c // 4 for c in color)
+        if highlight is not None and name not in highlight:
+            color = (color[0] // 4, color[1] // 4, color[2] // 4)
 
         peak_layer = int(np.argmax(trajectories[name]))
         short_name = name[:20]
@@ -261,7 +261,7 @@ def render_cooking_curves(
     return img
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Render per-region attention cooking curves across all layers",
     )

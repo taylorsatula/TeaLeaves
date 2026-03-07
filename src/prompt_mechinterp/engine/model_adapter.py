@@ -10,7 +10,7 @@ architectures, walks the module tree searching for attention submodules.
 """
 
 import logging
-from typing import List, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +25,10 @@ class ModelAdapter:
         num_kv_heads: int,
         hidden_size: int,
         vocab_size: int,
-        attention_modules: List[Tuple[int, object]],
-        layer_modules: List[Tuple[int, object]],
-        lm_head: object,
-        norm: object,
+        attention_modules: list[tuple[int, Any]],
+        layer_modules: list[tuple[int, Any]],
+        lm_head: Any,
+        norm: Any,
         model_name: str = "unknown",
     ):
         self._num_layers = num_layers
@@ -43,7 +43,7 @@ class ModelAdapter:
         self._model_name = model_name
 
     @classmethod
-    def from_model(cls, model, tokenizer=None) -> "ModelAdapter":
+    def from_model(cls, model: Any, tokenizer: Any = None) -> "ModelAdapter":
         """Construct adapter by inspecting a loaded model."""
         config = model.config
 
@@ -141,24 +141,24 @@ class ModelAdapter:
     def model_name(self) -> str:
         return self._model_name
 
-    def get_attention_modules(self) -> List[Tuple[int, object]]:
+    def get_attention_modules(self) -> list[tuple[int, Any]]:
         """Return list of (layer_idx, attn_module) for hook registration."""
         return self._attention_modules
 
-    def get_layer_modules(self) -> List[Tuple[int, object]]:
+    def get_layer_modules(self) -> list[tuple[int, Any]]:
         """Return list of (layer_idx, layer_module) for residual hooks."""
         return self._layer_modules
 
-    def get_lm_head(self):
+    def get_lm_head(self) -> Any:
         """Return the language model head for logit lens projection."""
         return self._lm_head
 
-    def get_norm(self):
+    def get_norm(self) -> Any:
         """Return the final normalization layer before lm_head."""
         return self._norm
 
 
-def _find_layers_container(model):
+def _find_layers_container(model: Any) -> Any:
     """Find the sequential container holding transformer layers.
 
     Tries known paths in order:
@@ -183,7 +183,7 @@ def _find_layers_container(model):
     return None
 
 
-def _find_attention_submodule(layer):
+def _find_attention_submodule(layer: Any) -> Any:
     """Find the self-attention submodule within a decoder layer.
 
     Tries: self_attn, attention, attn
@@ -195,7 +195,7 @@ def _find_attention_submodule(layer):
     return None
 
 
-def _find_lm_head(model):
+def _find_lm_head(model: Any) -> Any:
     """Find the language model head.
 
     Tries: model.lm_head, model.output, model.embed_out
@@ -208,7 +208,7 @@ def _find_lm_head(model):
     return None
 
 
-def _find_final_norm(model):
+def _find_final_norm(model: Any) -> Any:
     """Find the final normalization layer before lm_head.
 
     Tries: model.model.norm, model.model.final_layernorm,
