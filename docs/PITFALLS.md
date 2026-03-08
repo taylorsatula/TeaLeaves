@@ -85,7 +85,7 @@ recency made the problem WORSE.
 **Root cause**: The recency gradient is powerful enough to overwrite the format
 instruction representation at L48. In testing, a terminal `<primary_focus>`
 directive increased context bleed by 19% and destroyed format compliance
-(`<` token rank 34K at L63 — never recovers from the L48 crash).
+(`<` token rank 34K at L63, never recovers from the L48 crash).
 
 **Solution**: Don't fight the recency gradient. Place instructions where the
 model naturally reads them (early in the prompt). Use structural markers
@@ -126,7 +126,7 @@ attention weights are captured.
 **Root cause**: Many models' eager attention implementations return the full
 attention matrix regardless of this flag. The decoder layer discards attention
 unconditionally (`hidden_states, _ = self.self_attn(...)`). The flag only
-controls whether the DECODER LAYER keeps the return — but hooks on self_attn
+controls whether the DECODER LAYER keeps the return, but hooks on self_attn
 capture it before the layer discards it.
 
 **Solution**: Don't rely on `output_attentions`. Always use hooks for

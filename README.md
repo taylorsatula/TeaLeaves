@@ -2,16 +2,16 @@
 
 <img src="docs/images/tealeaves_icon.png" alt="TeaLeaves icon" width="128">
 
-End-to-end mechanistic interpretability pipeline for prompts. Annotate regions in any prompt, run attention capture and logit lens on any HuggingFace model, get back heatmaps, cooking curves, animated layer sweeps, and comparative analysis with empirical evidence of what changed and where.
+Mechanistic interpretability pipeline for prompts. Annotate regions in any prompt, run attention capture and logit lens on any HuggingFace model, get back heatmaps, cooking curves, animated layer sweeps, and comparative analysis showing what changed and where.
 
-Existing MI tools (TransformerLens, NNsight, pyvene) are libraries — they give you hooks and activation access to build your own analysis. TeaLeaves is the pipeline: structured prompt goes in, empirical evidence comes out.
+Existing MI tools (TransformerLens, NNsight, pyvene) are libraries: they give you hooks and activation access to build your own analysis. TeaLeaves is a pipeline that takes a structured prompt and produces attention heatmaps, cooking curves, and variant comparisons.
 
 ## What it does
 
 - **Region annotation**: Define named spans in your prompt via JSON config (markers, regex, or char ranges). The pipeline maps these to token positions, handling BPE boundary effects and chat template artifacts automatically.
 - **Attention capture**: Hooks every attention layer to extract head-averaged attention weights at configurable query positions
 - **Logit lens**: Projects the residual stream through the final norm + LM head at each layer to track token rank trajectories
-- **Visualization**: Four renderers — per-token heatmaps, per-region cooking curves, animated layer sweeps, and multi-sample aggregates with confidence bands
+- **Visualization**: Four renderers: per-token heatmaps, per-region cooking curves, animated layer sweeps, and multi-sample aggregates with confidence bands
 - **Variant comparison**: Automated N-variant comparison with delta tables, multi-seed stability analysis, and markdown reports
 
 ## Pipeline
@@ -35,18 +35,18 @@ The cooking curves below show the same prompt before and after iterative tuning 
 
 The "before" curve is from a first-draft prompt. Several regions show artifact peaks at L0 from near-zero values. `current_message` has a narrow, isolated spike around L42–45 but no sustained dominance. `task_entity` unexpectedly takes over the output formatting layers (L56+), and the mid-layers are noisy with no clear phase differentiation:
 
-![Before tuning — attention is unfocused](docs/images/cooking_before.png)
+![Before tuning, attention is unfocused](docs/images/cooking_before.png)
 
-After several rounds of restructuring guided by the pipeline's output — adjusting region boundaries, reordering task sections, adding structural markers — the curves show clean phase progression. `directive` and `conversation_turns` peak first (L3), rules regions differentiate through the early-mid layers, `current_message` sustains dominance through the focus layers (L40–50), and `output_format` cleanly takes over the final layers. The mid-layer oscillations are structured rather than noisy:
+After several rounds of restructuring guided by the pipeline's output (adjusting region boundaries, reordering task sections, adding structural markers), the curves show clean phase progression. `directive` and `conversation_turns` peak first (L3), rules regions differentiate through the early-mid layers, `current_message` sustains dominance through the focus layers (L40–50), and `output_format` cleanly takes over the final layers. The mid-layer oscillations are structured rather than noisy:
 
-![After tuning — attention is focused and phase-separated](docs/images/cooking_after.png)
+![After tuning, attention is focused and phase-separated](docs/images/cooking_after.png)
 
-Every change in that tuning process was validated by re-running the pipeline and comparing curves, rather than relying on whether the model's text output "seemed better."
+Each change was validated by re-running the pipeline and comparing curves against the baseline.
 
 ## Quick start
 
 ```bash
-# Install (local — rendering and analysis only)
+# Install (local, rendering and analysis only)
 pip install -e .
 
 # Install with GPU dependencies (for running the engine)
@@ -88,7 +88,7 @@ python -m tealeaves.prep.inputs \
 
 ```bash
 # scp the self-contained engine, setup script, and test cases to your GPU box
-scp src/tealeaves/engine/run_analysis.py gpu:/workspace/
+scp src/engine/run_analysis.py gpu:/workspace/
 scp infra/vastai_setup.sh gpu:/workspace/
 scp test_cases.json gpu:/workspace/
 
@@ -135,7 +135,7 @@ python -m tealeaves.analysis.report \
 
 ## Input formats
 
-The pipeline takes three input files. All content is model-agnostic — use any system prompt, any conversation structure, any region definitions.
+The pipeline takes three input files. All content is model-agnostic: any system prompt, any conversation structure, any region definitions.
 
 ### `system_prompt.txt`
 
@@ -168,7 +168,7 @@ Array of conversation objects. Each object represents one test case for MI analy
 | `user_regions` | no | Per-case region defs for user message (overrides global `user_message.regions`) |
 | `response_regions` | no | Per-case region defs for response (overrides global `response.regions`) |
 
-Where conversations come from is up to you — export from a chat database, hand-write them, pull from logs, generate synthetically. The pipeline doesn't care about the source, only the format.
+Conversations can come from any source: exported from a chat database, hand-written, pulled from logs, or generated synthetically.
 
 ### `regions.json`
 
@@ -201,7 +201,7 @@ Defines named text spans to track attention over. Regions are matched against th
 }
 ```
 
-**Region detection strategies** — each region def needs a `name` and one of these boundary strategies:
+**Region detection strategies**: each region def needs a `name` and one of these boundary strategies:
 
 | Strategy | Fields | Use when |
 |----------|--------|----------|
@@ -224,7 +224,7 @@ Set `end_marker`, `end_pattern`, or `end_char` to `null` to extend to end of tex
 ## Package structure
 
 ```
-src/tealeaves/
+src/
     constants.py          # Shared phase definitions, skip regions, display defaults
     engine/
         run_analysis.py   # Self-contained MI engine (scp to GPU boxes)
@@ -254,9 +254,9 @@ infra/
 
 ## Why this exists
 
-Prompt engineering is typically done by feel — you tweak wording, reorder sections, adjust emphasis, then eyeball the outputs to see if they "look right." A change that seems to improve one case might silently degrade others, and you have no way to know without exhaustive manual testing.
+Prompt engineering typically relies on eyeballing model outputs after each change. A tweak that seems to improve one case might silently degrade others.
 
-TeaLeaves replaces guesswork with empirical measurement. By capturing exactly how the model distributes attention across every region of your prompt at every layer, you can see with certainty whether a change is helping or harming — and *where* in the model's processing the effect occurs.
+TeaLeaves captures how the model distributes attention across every region of your prompt at every layer, so you can measure whether a change helped or hurt, and where in the forward pass the effect occurs.
 
 The pipeline was originally built to tune the subcortical prompt for [Mira](https://github.com/taylorsatula/mira-OSS), a persistent digital entity with self-directed memory and context window management. Because subcortical runs on a small model in a single forward pass with no reasoning, every word in the prompt either drives attention or wastes it. The techniques generalize to any prompt and any model.
 
@@ -281,7 +281,7 @@ The engine auto-discovers model architecture from any HuggingFace decoder-only t
 | **Gemma** | Gemma-2-9B-IT | Gemma format | 42 | System role auto-merged into user |
 | **GPT (OpenAI)** | gpt-oss-20b | OpenAI format | 24 | Full support (MoE) |
 
-Models without a system role (Gemma) are handled automatically — the engine merges system content into the first user message. Any HuggingFace model with a chat template and eager attention support should work.
+Models without a system role (Gemma) are handled automatically: the engine merges system content into the first user message. Any HuggingFace model with a chat template and eager attention support should work.
 
 Requirements: `attn_implementation="eager"` (flash attention doesn't materialize the attention matrix).
 
@@ -293,13 +293,13 @@ Rule of thumb: `model_params * 2 bytes + 5GB headroom` (fp16 weights + attention
 |-------|-------------|-----------------|
 | 8B params | ~21GB | A100 40GB |
 | 32B params | ~69GB | H100 80GB |
-| 70B params | ~145GB | Won't fit single GPU — use quantization |
+| 70B params | ~145GB | Won't fit single GPU; use quantization |
 
 See `docs/PITFALLS.md` for memory estimation details and OOM prevention.
 
 ## Documentation
 
-- **[Pipeline Explained](docs/PIPELINE_EXPLAINED.md)** — How region annotation, attention hooks, logit lens, and per-token capture work
-- **[Pitfalls](docs/PITFALLS.md)** — Failure modes discovered empirically, with root causes and solutions
-- **[Known Good Approaches](docs/KNOWN_GOOD_APPROACHES.md)** — Patterns validated across multiple experiments
-- **[SKILL.md](SKILL.md)** — Operational reference for running the full MI pipeline
+- **[Pipeline Explained](docs/PIPELINE_EXPLAINED.md)**: How region annotation, attention hooks, logit lens, and per-token capture work
+- **[Pitfalls](docs/PITFALLS.md)**: Failure modes discovered empirically, with root causes and solutions
+- **[Known Good Approaches](docs/KNOWN_GOOD_APPROACHES.md)**: Patterns validated across multiple experiments
+- **[SKILL.md](SKILL.md)**: Operational reference for running the full MI pipeline

@@ -5,7 +5,7 @@
 # Memory rule of thumb: model_params * 2 bytes + 5GB headroom
 #
 # Usage:
-#   scp src/tealeaves/engine/run_analysis.py vastai:/workspace/
+#   scp src/engine/run_analysis.py vastai:/workspace/
 #   scp test_cases.json vastai:/workspace/
 #   ssh vastai 'MODEL_ID=meta-llama/Llama-3-8B bash /workspace/vastai_setup.sh'
 

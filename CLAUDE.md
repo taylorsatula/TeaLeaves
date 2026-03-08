@@ -1,11 +1,11 @@
-# TeaLeaves — Mechanistic Interpretability Pipeline
+# TeaLeaves: Mechanistic Interpretability Pipeline
 
-End-to-end pipeline for analyzing how any LLM processes any prompt. Annotate regions, capture attention and logit lens across all layers, render visualizations, and compare prompt variants with empirical evidence.
+Mechanistic interpretability pipeline for analyzing how any LLM processes any prompt. Annotate regions, capture attention and logit lens across all layers, render visualizations, and compare prompt variants with empirical evidence.
 
 ## Package Structure
 
 ```
-src/tealeaves/
+src/
     __init__.py              # Package version (0.1.0)
     constants.py             # FINAL_LAYERS, DISPLAY_PHASES, ANALYSIS_PHASES, SKIP_REGIONS
 
@@ -38,8 +38,6 @@ docs/
 
 infra/
     vastai_setup.sh          # GPU box bootstrap (configurable MODEL_ID)
-
-subcortical_tuning_test.py   # PARKED — MIRA-dependent, separate integration plan
 ```
 
 ## Data Flow
@@ -63,7 +61,7 @@ render/*.py + analysis/*.py (local)
 `engine/run_analysis.py` has model discovery logic inlined so it can be scp'd to a GPU box as a single file with no package imports. `engine/model_adapter.py` has the clean importable version of the same logic. The `engine/__init__.py` documents this design.
 
 ### Model auto-discovery
-The engine reads `model.config` for layer count, head counts, hidden size, vocab size. It walks the module tree to find attention submodules, LM head, and final norm. No hardcoded model assumptions — works with Llama, Qwen, Mistral, Gemma, GPT-NeoX families.
+The engine reads `model.config` for layer count, head counts, hidden size, vocab size. It walks the module tree to find attention submodules, LM head, and final norm. No hardcoded model assumptions. Works with Llama, Qwen, Mistral, Gemma, GPT-NeoX families.
 
 ### Single GPU (`device_map={"": 0}`)
 Multi-GPU via `device_map="auto"` causes OOM between cases due to accelerate's `AlignDevicesHook` leaking state. Single GPU eliminates all accelerate hooks.

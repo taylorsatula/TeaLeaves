@@ -7,7 +7,7 @@ Patterns validated across multiple experiments.
 **Single GPU `device_map={"": 0}`** eliminates all accelerate hook
 interference. The memory savings from multi-GPU don't justify the hook
 ordering and OOM-leak bugs. If the model doesn't fit on one GPU, use a
-smaller model or quantization — don't use device_map="auto".
+smaller model or quantization; don't use device_map="auto".
 
 ## Tokenization
 
@@ -41,7 +41,7 @@ the output preparation phase. For a 64-layer model, this is L60-63.
 
 **Per-region per-token density** (`attention / n_tokens`) is the fair
 comparison metric across regions. Raw attention sums are dominated by
-region length — a region with 500 tokens will naturally capture more
+region length: a region with 500 tokens will naturally capture more
 total attention than a region with 20 tokens, even if the 20-token
 region is per-token more important.
 
@@ -71,5 +71,5 @@ before declaring a variant successful.
 
 **Cooking curves** (per-region attention trajectories across layers) reveal
 dynamics that terminal-layer metrics miss entirely. Rules may peak at
-L0-8 with 14x more attention than at terminal — this absorption pattern
+L0-8 with 14x more attention than at terminal. This absorption pattern
 is invisible in terminal-only analysis.

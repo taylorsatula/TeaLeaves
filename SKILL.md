@@ -1,16 +1,16 @@
 # MI Analysis Operational Reference
 
-Operational guide for running the tealeaves pipeline end-to-end. Written for a collaborator fluent in transformer internals, attention mechanics, and logit lens methodology.
+Operational guide for running the tealeaves pipeline from prep through analysis. Written for a collaborator fluent in transformer internals, attention mechanics, and logit lens methodology.
 
 ## Pipeline Orchestration
 
 ### Stage 1: Region Annotation (local)
 
-Define regions via `regions.json` — named character spans in the prompt text. Three detection strategies:
+Define regions via `regions.json` (named character spans in the prompt text). Three detection strategies:
 
-- **Marker-based**: `"start_marker": "## Rules", "end_marker": "## Examples"` — literal text boundaries
-- **Regex-based**: `"start_pattern": "Task \\d+:", "end_pattern": "Task \\d+:|$"` — for repeating structures
-- **Character range**: `"start_char": 0, "end_char": 500` — explicit offsets
+- **Marker-based**: `"start_marker": "## Rules", "end_marker": "## Examples"` (literal text boundaries)
+- **Regex-based**: `"start_pattern": "Task \\d+:", "end_pattern": "Task \\d+:|$"` (for repeating structures)
+- **Character range**: `"start_char": 0, "end_char": 500` (explicit offsets)
 
 Assemble test cases:
 ```bash
@@ -21,14 +21,14 @@ python -m tealeaves.prep.inputs \
     --output test_cases.json
 ```
 
-The output `test_cases.json` contains the full prompt text, character-level region annotations, query position definitions, and tracked token list — everything the engine needs.
+The output `test_cases.json` contains the full prompt text, character-level region annotations, query position definitions, and tracked token list.
 
 ### Stage 2: GPU-Side Analysis
 
-`run_analysis.py` is self-contained — no package imports, only torch/transformers/stdlib. Deploy via scp:
+`run_analysis.py` is self-contained: no package imports, only torch/transformers/stdlib. Deploy via scp:
 
 ```bash
-scp src/tealeaves/engine/run_analysis.py gpu:/workspace/
+scp src/engine/run_analysis.py gpu:/workspace/
 scp test_cases.json gpu:/workspace/
 ssh gpu
 
@@ -50,7 +50,7 @@ Key flags:
 - `--no-per-token`: Skip per-token attention capture (faster, but no heatmaps)
 - `--top-k`: Number of top logit lens predictions to save per layer (default: 10)
 
-The engine auto-discovers model architecture — layer count, head config, attention module paths, LM head, final norm — from `model.config` and module tree walking.
+The engine auto-discovers model architecture (layer count, head config, attention module paths, LM head, final norm) from `model.config` and module tree walking.
 
 ### Stage 3: Result Retrieval
 
@@ -119,26 +119,26 @@ VRAM requirement: `model_params * 2 bytes + 5GB headroom` (fp16).
 - 8B model: A100 40GB ($0.50-0.80/hr)
 - 32B model: H100 80GB ($2.50-3.50/hr)
 
-Search for instances with CUDA 12.x base image and sufficient VRAM. Prefer single-GPU instances — multi-GPU with `device_map="auto"` causes OOM from accelerate hook state leaks.
+Search for instances with CUDA 12.x base image and sufficient VRAM. Prefer single-GPU instances. Multi-GPU with `device_map="auto"` causes OOM from accelerate hook state leaks.
 
 ### Bootstrap
 
 ```bash
 scp infra/vastai_setup.sh gpu:/workspace/
-scp src/tealeaves/engine/run_analysis.py gpu:/workspace/
+scp src/engine/run_analysis.py gpu:/workspace/
 scp test_cases.json gpu:/workspace/
 
-# MODEL_ID is required — no default
+# MODEL_ID is required (no default)
 ssh gpu 'HF_TOKEN=your_token MODEL_ID=meta-llama/Llama-3-8B bash /workspace/vastai_setup.sh'
 ```
 
-The setup script installs torch/transformers/accelerate, authenticates with HuggingFace (if HF_TOKEN set), and downloads model weights. `MODEL_ID` must be specified — the script will error if it's missing.
+The setup script installs torch/transformers/accelerate, authenticates with HuggingFace (if HF_TOKEN set), and downloads model weights. `MODEL_ID` must be specified; the script will error if it's missing.
 
 ### Execution Monitoring
 
 Watch for:
-- Model loading: "Loading model from..." — takes 2-5 min for 32B models
-- Per-case progress: "Processing case N/M" — each case takes 30-90s depending on sequence length
+- Model loading: "Loading model from..." (takes 2-5 min for 32B models)
+- Per-case progress: "Processing case N/M" (each case takes 30-90s depending on sequence length)
 - Memory: peak should be near `model_params * 2 + 5GB`. If it grows between cases, there's a leak.
 - Attention capture confirmation: "Registered hooks on N layers"
 
@@ -180,7 +180,7 @@ Each result JSON is 5-50MB depending on sequence length and number of layers. Bu
 
 ### What attention patterns reveal
 
-- **Region ratio** (e.g., conv_turns / current_message): Measures relative priority. A ratio >2x at terminal position indicates the model gives more attention to conversation history than the current message — potential context bleed.
+- **Region ratio** (e.g., conv_turns / current_message): Measures relative priority. A ratio >2x at terminal position indicates the model gives more attention to conversation history than the current message, indicating potential context bleed.
 - **Per-token density** (attention / n_tokens): Fair comparison across regions of different size. A 20-token region with 0.05 density is more influential per-token than a 500-token region with 0.02 density.
 - **Cooking curve peak timing**: Rules peaking at L0-8 then fading = normal absorption. Rules still high at L48+ = persistent influence (or the model is confused).
 - **Retention ratio** (terminal_value / peak_value): How much of a region's peak attention survives to the output layers. Low retention = absorbed early. High retention = persistent influence.
