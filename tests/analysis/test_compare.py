@@ -3,13 +3,13 @@
 import io
 import sys
 
-from prompt_mechinterp.analysis.compare import (
+from tealeaves.analysis.compare import (
     _auto_discover_regions,
     _detect_num_layers,
     _detect_seed,
     table_terminal_attention,
 )
-from prompt_mechinterp.constants import SKIP_REGIONS
+from tealeaves.constants import SKIP_REGIONS
 
 
 class TestDetectSeed:

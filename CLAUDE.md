@@ -1,11 +1,11 @@
-# prompt-mechinterp — Mechanistic Interpretability Toolkit
+# TeaLeaves — Mechanistic Interpretability Pipeline
 
-Generic toolkit for analyzing how any LLM processes any prompt via attention capture, logit lens, and region-based analysis.
+End-to-end pipeline for analyzing how any LLM processes any prompt. Annotate regions, capture attention and logit lens across all layers, render visualizations, and compare prompt variants with empirical evidence.
 
 ## Package Structure
 
 ```
-src/prompt_mechinterp/
+src/tealeaves/
     __init__.py              # Package version (0.1.0)
     constants.py             # FINAL_LAYERS, DISPLAY_PHASES, ANALYSIS_PHASES, SKIP_REGIONS
 
@@ -93,20 +93,20 @@ Users define regions in a JSON file with marker-based, regex-based, or character
 
 ```bash
 # Prep
-python -m prompt_mechinterp.prep.inputs --prompt X --regions X --conversations X --output X
+python -m tealeaves.prep.inputs --prompt X --regions X --conversations X --output X
 
 # Engine (on GPU box)
 python run_analysis.py --input X --output X --model-path X [--tracked-tokens "<"] [--no-per-token]
 
 # Render
-python -m prompt_mechinterp.render.heatmap --result X [--mask-chatml] [--clip-low 0.05]
-python -m prompt_mechinterp.render.cooking_curves --result X [--normalize per-region]
-python -m prompt_mechinterp.render.layer_gif --result X [--mask-chatml] [--fps 4]
-python -m prompt_mechinterp.render.aggregate --base-dir X --variants name:Label
+python -m tealeaves.render.heatmap --result X [--mask-chatml] [--clip-low 0.05]
+python -m tealeaves.render.cooking_curves --result X [--normalize per-region]
+python -m tealeaves.render.layer_gif --result X [--mask-chatml] [--fps 4]
+python -m tealeaves.render.aggregate --base-dir X --variants name:Label
 
 # Analysis
-python -m prompt_mechinterp.analysis.compare --base-dir X --variants name:Label [--ratio a:b] [--by-seed]
-python -m prompt_mechinterp.analysis.report --base-dir X --experiments key:label:dir --output-dir X
+python -m tealeaves.analysis.compare --base-dir X --variants name:Label [--ratio a:b] [--by-seed]
+python -m tealeaves.analysis.report --base-dir X --experiments key:label:dir --output-dir X
 ```
 
 ## Output Locations

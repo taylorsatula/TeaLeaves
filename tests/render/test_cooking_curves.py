@@ -5,7 +5,7 @@ import math
 import numpy as np
 import pytest
 
-from prompt_mechinterp.render.cooking_curves import (
+from tealeaves.render.cooking_curves import (
     _nice_ticks,
     compute_region_trajectories,
 )

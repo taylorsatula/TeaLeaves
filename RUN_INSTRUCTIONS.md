@@ -3,7 +3,7 @@ Run the prep step of the MI pipeline using the three input files in this directo
 The command is:
 
 ```
-python -m prompt_mechinterp.prep.inputs \
+python -m tealeaves.prep.inputs \
     --prompt data/inputs/system_prompt.txt \
     --regions data/inputs/regions.json \
     --conversations data/inputs/conversations.json \

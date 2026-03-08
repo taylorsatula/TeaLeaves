@@ -1,6 +1,6 @@
 """Tests for prep/regions.py — boundary detection engine."""
 
-from prompt_mechinterp.prep.regions import annotate_text
+from tealeaves.prep.regions import annotate_text
 
 
 # ===========================================================================

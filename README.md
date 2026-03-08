@@ -1,13 +1,17 @@
-# prompt-mechinterp
+# TeaLeaves
 
-Mechanistic interpretability toolkit for analyzing how any LLM processes any prompt. Captures per-token attention weights and logit lens projections across all layers, then renders the results as heatmaps, cooking curves, animated GIFs, and aggregate statistics.
+<img src="docs/images/tealeaves_icon.png" alt="TeaLeaves icon" width="128">
+
+End-to-end mechanistic interpretability pipeline for prompts. Annotate regions in any prompt, run attention capture and logit lens on any HuggingFace model, get back heatmaps, cooking curves, animated layer sweeps, and comparative analysis with empirical evidence of what changed and where.
+
+Existing MI tools (TransformerLens, NNsight, pyvene) are libraries — they give you hooks and activation access to build your own analysis. TeaLeaves is the pipeline: structured prompt goes in, empirical evidence comes out.
 
 ## What it does
 
+- **Region annotation**: Define named spans in your prompt via JSON config (markers, regex, or char ranges). The pipeline maps these to token positions, handling BPE boundary effects and chat template artifacts automatically.
 - **Attention capture**: Hooks every attention layer to extract head-averaged attention weights at configurable query positions
 - **Logit lens**: Projects the residual stream through the final norm + LM head at each layer to track token rank trajectories
-- **Region-based analysis**: Maps named regions (defined via JSON config) onto the token sequence, enabling per-region attention metrics
-- **Visualization**: Four complementary renderers for different analytical questions
+- **Visualization**: Four renderers — per-token heatmaps, per-region cooking curves, animated layer sweeps, and multi-sample aggregates with confidence bands
 - **Variant comparison**: Automated N-variant comparison with delta tables, multi-seed stability analysis, and markdown reports
 
 ## Pipeline
@@ -73,7 +77,7 @@ Create a `regions.json` describing named spans in your prompt:
 ### 2. Prepare inputs
 
 ```bash
-python -m prompt_mechinterp.prep.inputs \
+python -m tealeaves.prep.inputs \
     --prompt system_prompt.txt \
     --regions regions.json \
     --conversations conversations.json \
@@ -84,7 +88,7 @@ python -m prompt_mechinterp.prep.inputs \
 
 ```bash
 # scp the self-contained engine, setup script, and test cases to your GPU box
-scp src/prompt_mechinterp/engine/run_analysis.py gpu:/workspace/
+scp src/tealeaves/engine/run_analysis.py gpu:/workspace/
 scp infra/vastai_setup.sh gpu:/workspace/
 scp test_cases.json gpu:/workspace/
 
@@ -103,27 +107,27 @@ ssh gpu 'python /workspace/run_analysis.py \
 
 ```bash
 # Per-token attention heatmap
-python -m prompt_mechinterp.render.heatmap --result results/case_0.json --mask-chatml
+python -m tealeaves.render.heatmap --result results/case_0.json --mask-chatml
 
 # Per-region attention trajectories across layers
-python -m prompt_mechinterp.render.cooking_curves --result results/case_0.json --normalize per-region
+python -m tealeaves.render.cooking_curves --result results/case_0.json --normalize per-region
 
 # Animated layer sweep
-python -m prompt_mechinterp.render.layer_gif --result results/case_0.json --mask-chatml
+python -m tealeaves.render.layer_gif --result results/case_0.json --mask-chatml
 
 # Multi-sample aggregate with confidence bands
-python -m prompt_mechinterp.render.aggregate --base-dir results/ --variants baseline:Baseline
+python -m tealeaves.render.aggregate --base-dir results/ --variants baseline:Baseline
 ```
 
 ### 5. Compare variants
 
 ```bash
-python -m prompt_mechinterp.analysis.compare \
+python -m tealeaves.analysis.compare \
     --base-dir results/ \
     --variants baseline:Baseline modified:Modified \
     --ratio context:current_message
 
-python -m prompt_mechinterp.analysis.report \
+python -m tealeaves.analysis.report \
     --base-dir results/ \
     --experiments baseline:Baseline:results_baseline modified:Modified:results_modified \
     --output-dir reports/
@@ -220,7 +224,7 @@ Set `end_marker`, `end_pattern`, or `end_char` to `null` to extend to end of tex
 ## Package structure
 
 ```
-src/prompt_mechinterp/
+src/tealeaves/
     constants.py          # Shared phase definitions, skip regions, display defaults
     engine/
         run_analysis.py   # Self-contained MI engine (scp to GPU boxes)
@@ -250,11 +254,11 @@ infra/
 
 ## Why this exists
 
-This pipeline was originally built to tune the subcortical prompt for [Mira](https://github.com/taylorsatula/mira-OSS), a persistent digital entity with self-directed memory and context window management. Subcortical is a cheap, fast LLM call that preprocesses every user message before the main model turn, rewriting fragmentary queries into retrieval-optimized searches and deciding which memories to keep in context. Because it runs on a small model in a single forward pass with no reasoning, every word in the prompt either drives attention or wastes it. The techniques generalize to any prompt and any model.
+Prompt engineering is typically done by feel — you tweak wording, reorder sections, adjust emphasis, then eyeball the outputs to see if they "look right." A change that seems to improve one case might silently degrade others, and you have no way to know without exhaustive manual testing.
 
-Prompt engineering is typically done by feel — you tweak wording, reorder sections, adjust emphasis, then eyeball the outputs to see if they "look right." But this approach is subjective and fragile. A change that seems to improve one case might silently degrade others, and you have no way to know without exhaustive manual testing.
+TeaLeaves replaces guesswork with empirical measurement. By capturing exactly how the model distributes attention across every region of your prompt at every layer, you can see with certainty whether a change is helping or harming — and *where* in the model's processing the effect occurs.
 
-This toolkit replaces guesswork with empirical measurement. By capturing exactly how the model distributes attention across every region of your prompt at every layer, you can see with certainty whether a change is helping or harming — and *where* in the model's processing the effect occurs.
+The pipeline was originally built to tune the subcortical prompt for [Mira](https://github.com/taylorsatula/mira-OSS), a persistent digital entity with self-directed memory and context window management. Because subcortical runs on a small model in a single forward pass with no reasoning, every word in the prompt either drives attention or wastes it. The techniques generalize to any prompt and any model.
 
 ### Layer-by-layer attention heatmap
 

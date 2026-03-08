@@ -2,7 +2,7 @@
 """Generate markdown experiment reports with delta-from-baseline analysis.
 
 Usage:
-    python -m prompt_mechinterp.analysis.report \\
+    python -m tealeaves.analysis.report \\
         --base-dir ./data/results \\
         --experiments baseline:Baseline:results_baseline composite:Composite:results_composite \\
         --output-dir ./reports

@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "prompt-mechinterp"
+name = "tealeaves"
 version = "0.1.0"
-description = "Mechanistic interpretability toolkit for LLM attention analysis"
+description = "End-to-end mechanistic interpretability pipeline for LLM prompts"
 requires-python = ">=3.10"
 dependencies = ["numpy", "Pillow"]
 
@@ -14,4 +14,4 @@ gpu = ["torch", "transformers", "accelerate", "safetensors", "huggingface_hub"]
 dev = ["pytest", "mypy"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/prompt_mechinterp"]
+packages = ["src/tealeaves"]

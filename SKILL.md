@@ -1,6 +1,6 @@
 # MI Analysis Operational Reference
 
-Operational guide for running the prompt-mechinterp pipeline end-to-end. Written for a collaborator fluent in transformer internals, attention mechanics, and logit lens methodology.
+Operational guide for running the tealeaves pipeline end-to-end. Written for a collaborator fluent in transformer internals, attention mechanics, and logit lens methodology.
 
 ## Pipeline Orchestration
 
@@ -14,7 +14,7 @@ Define regions via `regions.json` — named character spans in the prompt text. 
 
 Assemble test cases:
 ```bash
-python -m prompt_mechinterp.prep.inputs \
+python -m tealeaves.prep.inputs \
     --prompt system_prompt.txt \
     --regions regions.json \
     --conversations conversations.json \
@@ -28,7 +28,7 @@ The output `test_cases.json` contains the full prompt text, character-level regi
 `run_analysis.py` is self-contained — no package imports, only torch/transformers/stdlib. Deploy via scp:
 
 ```bash
-scp src/prompt_mechinterp/engine/run_analysis.py gpu:/workspace/
+scp src/tealeaves/engine/run_analysis.py gpu:/workspace/
 scp test_cases.json gpu:/workspace/
 ssh gpu
 
@@ -64,7 +64,7 @@ Each result JSON contains: per-token attention weights (all layers), logit lens 
 
 ```bash
 # Heatmap: "where is the model looking at position X?"
-python -m prompt_mechinterp.render.heatmap \
+python -m tealeaves.render.heatmap \
     --result data/results/case_0.json \
     --position terminal \
     --layers L60-63 \
@@ -73,20 +73,20 @@ python -m prompt_mechinterp.render.heatmap \
     --colormap inferno
 
 # Cooking curves: "how does attention to each region evolve through the forward pass?"
-python -m prompt_mechinterp.render.cooking_curves \
+python -m tealeaves.render.cooking_curves \
     --result data/results/case_0.json \
     --position terminal \
     --normalize per-region   # or 'raw' for absolute values
 
 # Layer GIF: "watch attention flow through all layers"
-python -m prompt_mechinterp.render.layer_gif \
+python -m tealeaves.render.layer_gif \
     --result data/results/case_0.json \
     --position terminal \
     --mask-chatml \
     --fps 4 --stride 1
 
 # Aggregate: "is this pattern stable across samples?"
-python -m prompt_mechinterp.render.aggregate \
+python -m tealeaves.render.aggregate \
     --base-dir data/results/ \
     --variants baseline:Baseline modified:Modified
 ```
@@ -95,7 +95,7 @@ python -m prompt_mechinterp.render.aggregate \
 
 ```bash
 # N-variant comparison with delta tables
-python -m prompt_mechinterp.analysis.compare \
+python -m tealeaves.analysis.compare \
     --base-dir data/results/ \
     --variants baseline:Baseline anchor:Anchor trim3:Trim3 \
     --ratio conv_turns:current_message \
@@ -104,7 +104,7 @@ python -m prompt_mechinterp.analysis.compare \
     --metrics all
 
 # Markdown experiment reports
-python -m prompt_mechinterp.analysis.report \
+python -m tealeaves.analysis.report \
     --base-dir data/results/ \
     --experiments baseline:Baseline:results_baseline anchor:Anchor:results_anchor \
     --output-dir reports/
@@ -125,7 +125,7 @@ Search for instances with CUDA 12.x base image and sufficient VRAM. Prefer singl
 
 ```bash
 scp infra/vastai_setup.sh gpu:/workspace/
-scp src/prompt_mechinterp/engine/run_analysis.py gpu:/workspace/
+scp src/tealeaves/engine/run_analysis.py gpu:/workspace/
 scp test_cases.json gpu:/workspace/
 
 # MODEL_ID is required — no default

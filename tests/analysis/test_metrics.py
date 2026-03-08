@@ -5,7 +5,7 @@ from math import isnan, nan
 import numpy as np
 import pytest
 
-from prompt_mechinterp.analysis.metrics import (
+from tealeaves.analysis.metrics import (
     avg_final_layers,
     compute_per_token_density,
     compute_region_attention_per_layer,

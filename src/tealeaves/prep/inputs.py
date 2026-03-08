@@ -2,7 +2,7 @@
 """Assemble test_cases.json from prompt text, region config, and conversations.
 
 Usage:
-    python -m prompt_mechinterp.prep.inputs \\
+    python -m tealeaves.prep.inputs \\
         --prompt system_prompt.txt \\
         --regions regions.json \\
         --conversations conversations.json \\

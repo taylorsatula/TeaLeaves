@@ -1,6 +1,6 @@
 """Tests for dynamic phase scaling in constants.py."""
 
-from prompt_mechinterp.constants import analysis_phases, display_phases
+from tealeaves.constants import analysis_phases, display_phases
 
 
 class TestDisplayPhases:

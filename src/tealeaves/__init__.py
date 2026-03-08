@@ -1,4 +1,4 @@
-"""Mechanistic interpretability toolkit for LLM attention analysis."""
+"""End-to-end mechanistic interpretability pipeline for LLM prompts."""
 
 __version__ = "0.1.0"
 

@@ -2,7 +2,7 @@
 
 from math import isnan, nan
 
-from prompt_mechinterp.analysis.formatting import delta_str, fmt
+from tealeaves.analysis.formatting import delta_str, fmt
 
 
 class TestDeltaStr:

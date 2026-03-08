@@ -6,7 +6,7 @@ reveals forward pass dynamics: rules lighting up early, going dark in the
 middle, then current_message and examples blazing late.
 
 Usage:
-    python -m prompt_mechinterp.render.layer_gif --result sample_01.json --mask-chatml
+    python -m tealeaves.render.layer_gif --result sample_01.json --mask-chatml
 """
 
 import argparse

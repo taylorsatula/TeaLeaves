@@ -5,11 +5,11 @@ Replaces compare_variants.py and analyze_v19_multiseed.py with a
 model-agnostic, region-agnostic comparison tool.
 
 Usage:
-    python -m prompt_mechinterp.analysis.compare \\
+    python -m tealeaves.analysis.compare \\
         --base-dir ./data/results \\
         --variants results_baseline:Baseline results_composite:Composite
 
-    python -m prompt_mechinterp.analysis.compare \\
+    python -m tealeaves.analysis.compare \\
         --base-dir ./data/results \\
         --variants results_baseline:Baseline results_v19:V19 \\
         --ratio conversation_turns:current_message \\

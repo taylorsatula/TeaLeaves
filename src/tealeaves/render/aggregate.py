@@ -5,8 +5,8 @@ Averages per-region attention across all samples at each layer, with
 optional confidence bands (std). Can overlay multiple variants for comparison.
 
 Usage:
-    python -m prompt_mechinterp.render.aggregate --base-dir ./data/results --dirs variant_a
-    python -m prompt_mechinterp.render.aggregate --base-dir ./data/results --dirs baseline composite --compare
+    python -m tealeaves.render.aggregate --base-dir ./data/results --dirs variant_a
+    python -m tealeaves.render.aggregate --base-dir ./data/results --dirs baseline composite --compare
 """
 
 import argparse

@@ -4,8 +4,8 @@
 Shows how each named region's attention evolves through the full forward pass.
 
 Usage:
-    python -m prompt_mechinterp.render.cooking_curves --result sample_01.json
-    python -m prompt_mechinterp.render.cooking_curves --result sample_01.json --normalize per-region
+    python -m tealeaves.render.cooking_curves --result sample_01.json
+    python -m tealeaves.render.cooking_curves --result sample_01.json --normalize per-region
 """
 
 import argparse

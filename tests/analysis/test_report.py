@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from prompt_mechinterp.analysis.report import (
+from tealeaves.analysis.report import (
     _classify_story,
     compute_context_bleed,
     compute_cooking_table,

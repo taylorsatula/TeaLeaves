@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from prompt_mechinterp.render._shared import (
+from tealeaves.render._shared import (
     gaussian_smooth,
     normalize_weights,
     parse_layer_spec,
@@ -194,25 +194,25 @@ class TestIsNewlineToken:
     """Tests for is_newline_token — detects whether a token represents a line break."""
 
     def test_plain_newline(self):
-        from prompt_mechinterp.render._shared import is_newline_token
+        from tealeaves.render._shared import is_newline_token
         assert is_newline_token("\n") is True
 
     def test_crlf_is_newline(self):
         """Windows-style \\r\\n should be detected as a newline token."""
-        from prompt_mechinterp.render._shared import is_newline_token
+        from tealeaves.render._shared import is_newline_token
         assert is_newline_token("\r\n") is True
 
     def test_bare_carriage_return_is_not_newline(self):
         """A bare \\r without \\n is not a newline — it's a control character."""
-        from prompt_mechinterp.render._shared import is_newline_token
+        from tealeaves.render._shared import is_newline_token
         assert is_newline_token("\r") is False
 
     def test_text_with_newline_is_not_newline_token(self):
-        from prompt_mechinterp.render._shared import is_newline_token
+        from tealeaves.render._shared import is_newline_token
         assert is_newline_token("hello\n") is False
 
     def test_empty_string_is_not_newline(self):
-        from prompt_mechinterp.render._shared import is_newline_token
+        from tealeaves.render._shared import is_newline_token
         assert is_newline_token("") is False
 
 

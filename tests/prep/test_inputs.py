@@ -1,6 +1,6 @@
 """Tests for prep/inputs.py — test case assembly."""
 
-from prompt_mechinterp.prep.inputs import build_test_cases
+from tealeaves.prep.inputs import build_test_cases
 
 
 def _basic_region_config():

@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from prompt_mechinterp.engine.model_adapter import (
+from tealeaves.engine.model_adapter import (
     ModelAdapter,
     _find_attention_submodule,
     _find_final_norm,

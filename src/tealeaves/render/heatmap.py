@@ -6,7 +6,7 @@ colored by attention intensity. Uses rank-based normalization (histogram
 equalization) to handle power-law skew in attention distributions.
 
 Usage:
-    python -m prompt_mechinterp.render.heatmap --result sample_01.json --mask-chatml
+    python -m tealeaves.render.heatmap --result sample_01.json --mask-chatml
 """
 
 import argparse
