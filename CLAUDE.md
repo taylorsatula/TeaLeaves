@@ -49,7 +49,7 @@ Phases scale dynamically to any layer count (`display_phases()` and `analysis_ph
 ## Constraints That Will Cause Bugs If Violated
 
 - **`run_analysis.py` must stay self-contained.** Zero package imports (no `from tealeaves...`). It gets scp'd to GPU boxes as a single file. Model discovery logic is inlined from `model_adapter.py`. Changes to model discovery must be synced in both files manually.
-- **Single GPU only** (`device_map={"": 0}`). Multi-GPU causes OOM between cases due to accelerate's `AlignDevicesHook` leaking state.
+- **Single GPU by default** (`device_map={"": 0}`). Use `--multi-gpu` for multi-GPU distribution. Multi-GPU works by stripping accelerate's `AlignDevicesHook` (which leaks state across forward passes) and replacing with stateless device-transfer hooks.
 - **`attn_implementation="eager"` is mandatory.** Flash attention doesn't materialize the attention matrix.
 - **Hook `self_attn`, not the decoder layer.** Accelerate's hooks on decoder layers fire before user hooks, corrupting capture.
 - **No hardcoded layer numbers in renderers.** All phase boundaries come from `display_phases(num_layers)` and `analysis_phases(num_layers)`.

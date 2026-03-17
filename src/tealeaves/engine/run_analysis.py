@@ -146,6 +146,40 @@ def _discover_model_config(model) -> dict:
     }
 
 
+def _replace_accelerate_hooks(model):
+    """Strip accelerate's AlignDevicesHook and replace with stateless device-transfer hooks.
+
+    AlignDevicesHook leaks state across forward passes, causing OOM on case 2+.
+    Our replacement just moves inputs to the right device — no state, no leak.
+    Returns hook handles (empty list if no accelerate hooks were present).
+    """
+    from accelerate.hooks import remove_hook_from_submodules
+
+    device_map = {}
+    for name, module in model.named_modules():
+        hook = getattr(module, '_hf_hook', None)
+        if hook is not None:
+            device_map[name] = hook.execution_device
+
+    if not device_map:
+        return []
+
+    remove_hook_from_submodules(model)
+
+    handles = []
+    for name, module in model.named_modules():
+        if name in device_map:
+            target = device_map[name]
+            def _pre_hook(mod, args, device=target):
+                return tuple(
+                    a.to(device) if isinstance(a, torch.Tensor) else a
+                    for a in args
+                )
+            handles.append(module.register_forward_pre_hook(_pre_hook))
+
+    return handles
+
+
 # ============================================================================
 # TOKENIZATION & REGION MAPPING
 # ============================================================================
@@ -956,6 +990,10 @@ def main():
         help="Skip per-token attention capture (saves memory in output)",
     )
     parser.add_argument(
+        "--multi-gpu", action="store_true",
+        help="Distribute model across available GPUs",
+    )
+    parser.add_argument(
         "--tracked-tokens", nargs="*", default=[],
         help="Tokens to track in logit lens (e.g., '<' 'folder_a')",
     )
@@ -1001,13 +1039,24 @@ def main():
     print(f"\nLoading model from {args.model_path}...")
     tokenizer = AutoTokenizer.from_pretrained(args.model_path)
 
+    gpu_count = torch.cuda.device_count()
+    if args.multi_gpu and gpu_count > 1:
+        dm = "auto"
+        print(f"  Multi-GPU mode: {gpu_count} devices")
+    else:
+        dm = {"": 0}
+
     model = AutoModelForCausalLM.from_pretrained(
         args.model_path,
         dtype=torch.float16,
-        device_map={"": 0},
+        device_map=dm,
         attn_implementation="eager",
     )
     model.eval()
+
+    device_hooks = _replace_accelerate_hooks(model)
+    if device_hooks:
+        print(f"  Replaced {len(device_hooks)} accelerate hooks with stateless transfers")
 
     model_memory = torch.cuda.max_memory_allocated() / (1024 ** 3)
     print(f"  Model loaded: {model_memory:.1f} GB GPU memory")
@@ -1045,6 +1094,9 @@ def main():
         print(f"  Written: {output_path}")
 
         del result
+
+    for h in device_hooks:
+        h.remove()
 
     print(f"\n{'=' * 70}")
     print(f"Analysis complete. Results in: {output_dir}")
