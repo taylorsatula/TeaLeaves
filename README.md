@@ -14,21 +14,6 @@ Existing MI tools (TransformerLens, NNsight, pyvene) are libraries: they give yo
 - **Visualization**: Four renderers: per-token heatmaps, per-region cooking curves, animated layer sweeps, and multi-sample aggregates with confidence bands
 - **Variant comparison**: Automated N-variant comparison with delta tables, multi-seed stability analysis, and markdown reports
 
-## Pipeline
-
-```
-prep/inputs.py (local)
-    system_prompt.txt + regions.json + conversations.json
-    --> test_cases.json (char-level region annotations)
-
-engine/run_analysis.py (GPU box, self-contained)
-    test_cases.json + any HuggingFace model
-    --> per-case JSON (attention data + logit lens + per-token weights)
-
-render/*.py + analysis/*.py (local)
-    per-case JSONs --> PNGs, GIFs, comparison tables, markdown reports
-```
-
 ### Before and after
 
 The cooking curves below show the same prompt before and after iterative tuning (both per-region normalized to 0–1 for direct comparison).
@@ -221,37 +206,6 @@ Set `end_marker`, `end_pattern`, or `end_char` to `null` to extend to end of tex
 
 **Tracked tokens** are specific tokens to monitor rank and probability for across all layers in the logit lens output.
 
-## Package structure
-
-```
-src/
-    constants.py          # Shared phase definitions, skip regions, display defaults
-    engine/
-        run_analysis.py   # Self-contained MI engine (scp to GPU boxes)
-        model_adapter.py  # Auto-discovers architecture from any HF model
-    prep/
-        regions.py        # Region annotation from JSON config
-        inputs.py         # Assemble test_cases.json
-    render/
-        _shared.py        # Fonts, colormaps, layout engine, normalization
-        loaders.py        # Unified result JSON loading
-        heatmap.py        # Per-token spatial attention heatmap (PNG)
-        cooking_curves.py # Per-region attention trajectories (PNG)
-        layer_gif.py      # Animated per-token heatmap sweep (GIF)
-        aggregate.py      # Multi-sample aggregate curves (PNG)
-    analysis/
-        metrics.py        # Terminal avg, region ratios, density, cooking stats
-        formatting.py     # Table output helpers
-        compare.py        # N-variant comparison with delta tables
-        report.py         # Markdown experiment reports
-docs/
-    PIPELINE_EXPLAINED.md # How the MI pipeline works mechanically
-    PITFALLS.md           # Failure modes and solutions
-    KNOWN_GOOD_APPROACHES.md # Empirically validated patterns
-infra/
-    vastai_setup.sh       # GPU box bootstrap script
-```
-
 ## Why this exists
 
 Prompt engineering typically relies on eyeballing model outputs after each change. A tweak that seems to improve one case might silently degrade others.
@@ -295,11 +249,10 @@ Rule of thumb: `model_params * 2 bytes + 5GB headroom` (fp16 weights + attention
 | 32B params | ~69GB | H100 80GB |
 | 70B params | ~145GB | Won't fit single GPU; use quantization |
 
-See `docs/PITFALLS.md` for memory estimation details and OOM prevention.
+See [Empirical Notes](docs/EMPIRICAL_NOTES.md) for memory estimation details and OOM prevention.
 
 ## Documentation
 
-- **[Pipeline Explained](docs/PIPELINE_EXPLAINED.md)**: How region annotation, attention hooks, logit lens, and per-token capture work
-- **[Pitfalls](docs/PITFALLS.md)**: Failure modes discovered empirically, with root causes and solutions
-- **[Known Good Approaches](docs/KNOWN_GOOD_APPROACHES.md)**: Patterns validated across multiple experiments
-- **[SKILL.md](SKILL.md)**: Operational reference for running the full MI pipeline
+- **[SKILL.md](SKILL.md)**: Operational reference for running the full pipeline with all flags
+- **[Pipeline Explained](docs/PIPELINE_EXPLAINED.md)**: How region annotation, attention hooks, logit lens, and per-token capture work mechanically
+- **[Empirical Notes](docs/EMPIRICAL_NOTES.md)**: What broke, why, and what works — failure modes and validated patterns

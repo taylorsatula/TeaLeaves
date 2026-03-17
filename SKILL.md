@@ -114,12 +114,7 @@ python -m tealeaves.analysis.report \
 
 ### Provisioning
 
-VRAM requirement: `model_params * 2 bytes + 5GB headroom` (fp16).
-
-- 8B model: A100 40GB ($0.50-0.80/hr)
-- 32B model: H100 80GB ($2.50-3.50/hr)
-
-Search for instances with CUDA 12.x base image and sufficient VRAM. Prefer single-GPU instances. Multi-GPU with `device_map="auto"` causes OOM from accelerate hook state leaks.
+Search for instances with CUDA 12.x base image and sufficient VRAM. Single-GPU instances only. See [Empirical Notes](docs/EMPIRICAL_NOTES.md) for memory estimation and why multi-GPU fails.
 
 ### Bootstrap
 
@@ -165,40 +160,6 @@ Each result JSON is 5-50MB depending on sequence length and number of layers. Bu
 - `--normalize raw`: Absolute attention values. Use for seeing actual attention budget allocation. Current_message will dominate.
 - `--layers L60-63`: Analyze specific layers. "L60-63" = final 4 layers = "what the model decided." "L0-8" = early attention = rules absorption phase.
 - `--smoothing N`: Gaussian smoothing sigma for heatmaps. Higher = smoother. Default 0 (no smoothing).
-
-## Interpretive Framework
-
-### Layer phases (for a 64-layer model)
-
-| Phase | Layers | What happens |
-|-------|--------|--------------|
-| Broad read | 0-6 | Model reads everything. Rules get 14x more attention than at terminal layers. |
-| Absorption | 7-11 | Rule content gets absorbed into residual stream. Attention drops sharply. |
-| Compression | 12-31 | Quiet middle layers. Information is being integrated. |
-| Re-engagement | 32-47 | Current message blazes. Context-dependent processing. |
-| Output prep | 48-63 | Model commits to output. Examples and format tokens dominate. |
-
-### What attention patterns reveal
-
-- **Region ratio** (e.g., conv_turns / current_message): Measures relative priority. A ratio >2x at terminal position indicates the model gives more attention to conversation history than the current message, indicating potential context bleed.
-- **Per-token density** (attention / n_tokens): Fair comparison across regions of different size. A 20-token region with 0.05 density is more influential per-token than a 500-token region with 0.02 density.
-- **Cooking curve peak timing**: Rules peaking at L0-8 then fading = normal absorption. Rules still high at L48+ = persistent influence (or the model is confused).
-- **Retention ratio** (terminal_value / peak_value): How much of a region's peak attention survives to the output layers. Low retention = absorbed early. High retention = persistent influence.
-
-### Logit lens interpretation
-
-- Track specific tokens across layers to see when the model "decides" on them
-- A token at rank 1-10 means the model would produce it if decoding stopped at that layer
-- Rank crashes (e.g., from rank 4 to rank 64K at layer 48) indicate competing representations overwrote the prediction
-- Recovery from a crash (back to rank <100 by terminal layers) means the model resolved the conflict
-
-### Red flags in analysis
-
-- Context bleed ratio >2x: conversation history dominates over current message
-- Format token rank >1000 at terminal layer: format compliance likely broken
-- Region with <0.1% per-token density at its expected influence point: the model ignores it
-- Cooking curve that never peaks: the region has no influence at any layer
-- Multi-seed instability: if a metric varies >50% across seeds, the pattern is fragile
 
 ## Data Conventions
 

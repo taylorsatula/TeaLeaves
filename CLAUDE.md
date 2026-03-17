@@ -73,9 +73,9 @@ python -m tealeaves.analysis.report --base-dir X --experiments key:label:dir --o
 - New metrics go in `analysis/metrics.py`, used by `compare.py` or `report.py`
 - Region detection strategies go in `prep/regions.py`
 
-## Deep-Dive Documentation
+## Documentation
 
-- [PIPELINE_EXPLAINED.md](docs/PIPELINE_EXPLAINED.md): How region annotation, tokenization, attention hooks, and logit lens work mechanically
-- [PITFALLS.md](docs/PITFALLS.md): Failure modes discovered empirically (OOM, hook ordering, BPE boundaries, offset mapping)
-- [KNOWN_GOOD_APPROACHES.md](docs/KNOWN_GOOD_APPROACHES.md): Patterns validated across multiple experiments
-- [SKILL.md](SKILL.md): Full operational reference for running the pipeline end-to-end
+- [README.md](README.md): What this project is, installation, quick start, model support, GPU requirements
+- [SKILL.md](SKILL.md): Operational reference — every flag, Vast.ai workflow, data conventions, result JSON schema
+- [docs/PIPELINE_EXPLAINED.md](docs/PIPELINE_EXPLAINED.md): How tokenization, attention hooks, logit lens, and region resolution work mechanically
+- [docs/EMPIRICAL_NOTES.md](docs/EMPIRICAL_NOTES.md): What broke, why, and what works — failure modes and validated patterns
