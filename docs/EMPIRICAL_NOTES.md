@@ -4,12 +4,14 @@ What works, what doesn't, and why. Discovered across multiple experiments.
 
 ## GPU Configuration
 
-**Use single GPU `device_map={"": 0}`.** Multi-GPU via `device_map="auto"` causes two problems:
+**Single GPU by default** (`device_map={"": 0}`). Use `--multi-gpu` to distribute across GPUs.
+
+Multi-GPU via `device_map="auto"` originally caused two problems:
 
 1. **OOM between cases**: accelerate's `AlignDevicesHook` leaks state across forward passes. Internal buffers accumulate and aren't freed. First case runs fine, second OOMs despite identical size.
 2. **Hook ordering**: accelerate registers `AlignDevicesHook` on each decoder layer. User-registered forward hooks fire AFTER accelerate's hooks, so `send_to_device(output, input_device)` executes before your hook can capture or replace the attention matrix.
 
-If the model doesn't fit on one GPU, use a smaller model or quantization.
+**Fix**: `_replace_accelerate_hooks()` strips accelerate's hooks after loading and replaces them with stateless pre-forward hooks that just move inputs to the correct device. No state accumulation, no ordering conflicts.
 
 ### Memory Estimation
 
