@@ -1,99 +1,58 @@
-# TeaLeaves: Mechanistic Interpretability Pipeline
+# TeaLeaves
 
-Mechanistic interpretability pipeline for analyzing how any LLM processes any prompt. Annotate regions, capture attention and logit lens across all layers, render visualizations, and compare prompt variants with empirical evidence.
+Mechanistic interpretability pipeline: annotate regions in any prompt, capture attention and logit lens on any HuggingFace model, visualize and compare variants with empirical evidence.
 
-## Package Structure
+## How to Think About Results
 
-```
-src/
-    __init__.py              # Package version (0.1.0)
-    constants.py             # FINAL_LAYERS, DISPLAY_PHASES, ANALYSIS_PHASES, SKIP_REGIONS
+This pipeline measures how a model distributes attention across every region of a prompt at every layer. When interpreting results or helping with analysis:
 
-    engine/
-        run_analysis.py      # Self-contained MI engine (scp to GPU boxes, no package imports)
-        model_adapter.py     # Auto-discovers architecture from any HF model config
+- **Cooking curves are the primary diagnostic.** They show per-region attention trajectories across all layers. The shape matters more than the magnitude: clean phase separation (rules peak early, current_message dominates mid-layers, output_format takes over final layers) indicates a well-structured prompt.
+- **Per-region normalization** (`--normalize per-region`) compares trajectory shapes across regions of different magnitudes. Raw mode shows actual attention budget allocation.
+- **Terminal attention** (final 4 layers averaged) represents "what the model decided." Use `avg_final_layers()` for this. Single-layer measurements are noisy.
+- **Per-token density** (`attention / n_tokens`) is the fair cross-region comparison. Raw attention sums are dominated by region length.
+- **Region ratios** (e.g., `conv_turns / current_message`) reveal relative priority. A ratio >2x at terminal position indicates context bleed.
+- **Logit lens rank trajectories** show when the model "decides" on a token. A rank crash (e.g., rank 4 to rank 64K) means competing representations overwrote the prediction. Recovery by terminal layers means the conflict resolved.
+- **Multi-seed testing is mandatory** before declaring a variant successful. A metric that varies >50% across seeds is fragile.
 
-    prep/
-        regions.py           # Region annotation from JSON config (marker/regex/char-range)
-        inputs.py            # CLI: assemble test_cases.json from prompt + regions + conversations
+### Layer Phases
 
-    render/
-        _shared.py           # Fonts, colormaps, layout engine, normalization, palettes
-        loaders.py           # Unified data loading from result JSONs
-        heatmap.py           # Per-token spatial attention heatmap (PNG)
-        cooking_curves.py    # Per-region attention trajectories across layers (PNG)
-        layer_gif.py         # Animated per-token heatmap layer sweep (GIF)
-        aggregate.py         # Multi-sample aggregate curves with confidence bands (PNG)
+Phases scale dynamically to any layer count (`display_phases()` and `analysis_phases()` in `constants.py`). For a 64-layer model:
 
-    analysis/
-        metrics.py           # Terminal avg, region ratios, density, cooking stats
-        formatting.py        # Table output: fmt, pct, delta_str, print_header
-        compare.py           # N-variant comparison with auto-discovered regions
-        report.py            # Markdown experiment reports with delta-from-baseline
+| Phase | Layers | What happens |
+|-------|--------|--------------|
+| Broad read | 0-6 | Model reads everything. Rules get 14x more attention than at terminal. |
+| Absorption | 7-11 | Rule content absorbed into residual stream. Attention drops sharply. |
+| Compression | 12-31 | Quiet middle. Information is being integrated. |
+| Re-engagement | 32-47 | Current message dominates. Context-dependent processing. |
+| Output prep | 48-63 | Model commits to output. Examples and format tokens dominate. |
 
-docs/
-    PIPELINE_EXPLAINED.md    # How attention hooks, logit lens, region annotation work
-    PITFALLS.md              # Failure modes and solutions (OOM, hook ordering, BPE)
-    KNOWN_GOOD_APPROACHES.md # Empirically validated patterns
+### Red Flags
 
-infra/
-    vastai_setup.sh          # GPU box bootstrap (configurable MODEL_ID)
-```
+- Context bleed ratio >2x: conversation history dominates over current message
+- Cooking curve that never peaks: the region has no influence at any layer
+- Region with <0.1% per-token density at its expected influence point: model ignores it
+- Format token rank >1000 at terminal layer: format compliance likely broken
+- Rules still high at output prep layers: persistent influence (or confusion)
 
-## Data Flow
+## Constraints That Will Cause Bugs If Violated
 
-```
-prep/inputs.py (local)
-    system_prompt.txt + regions.json + conversations.json
-    --> test_cases.json (char-level region annotations)
+- **`run_analysis.py` must stay self-contained.** Zero package imports (no `from tealeaves...`). It gets scp'd to GPU boxes as a single file. Model discovery logic is inlined from `model_adapter.py`. Changes to model discovery must be synced in both files manually.
+- **Single GPU only** (`device_map={"": 0}`). Multi-GPU causes OOM between cases due to accelerate's `AlignDevicesHook` leaking state.
+- **`attn_implementation="eager"` is mandatory.** Flash attention doesn't materialize the attention matrix.
+- **Hook `self_attn`, not the decoder layer.** Accelerate's hooks on decoder layers fire before user hooks, corrupting capture.
+- **No hardcoded layer numbers in renderers.** All phase boundaries come from `display_phases(num_layers)` and `analysis_phases(num_layers)`.
+- **SKIP_REGIONS in `constants.py`** lists container regions (like `system_prompt`, `chat_template`) that should never be plotted as individual curves.
 
-engine/run_analysis.py (GPU box, self-contained)
-    test_cases.json + any HuggingFace model
-    --> per-case JSON (attention + logit lens + per-token weights)
-
-render/*.py + analysis/*.py (local)
-    per-case JSONs --> PNGs, GIFs, comparison tables, markdown reports
-```
-
-## Key Design Decisions
-
-### Self-contained engine (dual-existence pattern)
-`engine/run_analysis.py` has model discovery logic inlined so it can be scp'd to a GPU box as a single file with no package imports. `engine/model_adapter.py` has the clean importable version of the same logic. The `engine/__init__.py` documents this design.
-
-### Model auto-discovery
-The engine reads `model.config` for layer count, head counts, hidden size, vocab size. It walks the module tree to find attention submodules, LM head, and final norm. No hardcoded model assumptions. Works with Llama, Qwen, Mistral, Gemma, GPT-NeoX families.
-
-### Single GPU (`device_map={"": 0}`)
-Multi-GPU via `device_map="auto"` causes OOM between cases due to accelerate's `AlignDevicesHook` leaking state. Single GPU eliminates all accelerate hooks.
-
-### Hooks on `self_attn` (not decoder layer)
-With accelerate's device mapping, user hooks fire AFTER `AlignDevicesHook.post_forward`. Hooking `self_attn` directly (no accelerate hooks) ensures immediate capture.
-
-### `attn_implementation="eager"` (mandatory)
-Flash attention doesn't materialize the attention matrix. Eager attention always does, regardless of `output_attentions` flag.
-
-### Piece boundary detection via full-sequence decode + bisect
-`build_chat_tokens` decodes the full token sequence with `tokenizer.decode()`, finds content strings via `str.find()`, then maps char positions to token indices via binary search with progressive prefix decoding. This handles SentencePiece leading-space markers, BPE boundary effects at template junctions, and models that merge system into user (Gemma).
-
-### System role fallback
-Models that don't support system role (Gemma family) are handled automatically: the engine catches the template error, merges system content into the first user message with a `\n` separator, and re-applies the template. Region boundaries remain correct because the content strings are still findable in the decoded text.
-
-### Char-to-token via cumulative decode (sub-regions)
-Within located pieces, `resolve_char_regions_to_tokens` uses cumulative character offset mapping via per-token `tokenizer.decode()` for sub-region resolution. This is robust for intra-piece mapping where tokens are already sliced from the piece boundary.
-
-### Dynamic phase scaling
-Display phases and analysis phases scale proportionally to any layer count via `display_phases(num_layers)` and `analysis_phases(num_layers)`. No hardcoded layer numbers in renderers.
-
-### Region annotation via JSON config
-Users define regions in a JSON file with marker-based, regex-based, or character-range boundaries. No hardcoded markers or delimiters.
-
-## CLI Quick Reference
+## Running
 
 ```bash
-# Prep
+# Tests
+pytest
+
+# Prep (local)
 python -m tealeaves.prep.inputs --prompt X --regions X --conversations X --output X
 
-# Engine (on GPU box)
+# Engine (GPU box, standalone)
 python run_analysis.py --input X --output X --model-path X [--tracked-tokens "<"] [--no-per-token]
 
 # Render
@@ -107,16 +66,16 @@ python -m tealeaves.analysis.compare --base-dir X --variants name:Label [--ratio
 python -m tealeaves.analysis.report --base-dir X --experiments key:label:dir --output-dir X
 ```
 
-## Output Locations
+## Conventions
 
-All experimental data goes in `data/` (gitignored). Convention:
-- `data/inputs/test_cases.json`
-- `data/results_variant_name/sample_N.json`
-- `data/reports/experiment_name.md`
+- All experimental data goes in `data/` (gitignored): `data/inputs/`, `data/results_variant_name/sample_N.json`, `data/reports/`
+- Renderers follow: `main()` + `if __name__` block, import shared utilities from `render/_shared.py`, data loading from `render/loaders.py`
+- New metrics go in `analysis/metrics.py`, used by `compare.py` or `report.py`
+- Region detection strategies go in `prep/regions.py`
 
-## Extending
+## Deep-Dive Documentation
 
-- **New renderer**: Add to `render/`, import shared utilities from `render/_shared.py` and data loading from `render/loaders.py`. Keep `main()` + `if __name__` block.
-- **New metric**: Add to `analysis/metrics.py`. Use in `compare.py` or `report.py`.
-- **New model architecture**: If auto-discovery fails, add detection paths to `engine/model_adapter.py` AND inline the same logic in `engine/run_analysis.py` (maintain self-containment).
-- **New region detection strategy**: Add to `prep/regions.py`.
+- [PIPELINE_EXPLAINED.md](docs/PIPELINE_EXPLAINED.md): How region annotation, tokenization, attention hooks, and logit lens work mechanically
+- [PITFALLS.md](docs/PITFALLS.md): Failure modes discovered empirically (OOM, hook ordering, BPE boundaries, offset mapping)
+- [KNOWN_GOOD_APPROACHES.md](docs/KNOWN_GOOD_APPROACHES.md): Patterns validated across multiple experiments
+- [SKILL.md](SKILL.md): Full operational reference for running the pipeline end-to-end
