@@ -2,12 +2,16 @@
 
 <img src="docs/images/tealeaves_icon.png" alt="TeaLeaves icon" width="128">
 
-This is a people-friendly way of seeing how the model is interpreting your prompts in preparation for the inevitable next token prediction. My theory when making this (that was validated after I used/built TeaLeaves) was that very small models (1b,3b) were nearly as capable as larger (8b,12b) models at really high quality (but tightly bounded) structured outputs. There is a maxiumum "attention & skill" density in every model by the limit of the weights. If the layers arent' singing in harmony then they're not going to be as effective. TeaLeaves allows you to visualize in a very fast-and-loose way if your prompt changes made a demonstrible difference in the chances of the output being what you asked for. For example, if you are asking a model for {structured_output} and you can get that *understanding* out of the way early in the generation process the model has more *time* to focus on the rest of your task(s).
+This is a people-friendly way of seeing how the model is interpreting your prompts in preparation for the inevitable next token prediction. My theory when making this (that was validated after I used/built TeaLeaves) was that very small models (1b,3b) were nearly as capable as larger (8b,12b) models at really high quality (but tightly bounded) structured outputs. There is a maxiumum "attention & skill" density in every model by the limit of the weights. If the layers arent' singing in harmony then they're not going to be as effective. TeaLeaves allows you to visualize if your prompt changes made a demonstrible difference in the chances of the output being what you asked for. For example, if you are asking a model for {structured_output} and you can get that *understanding* out of the way early in the generation process the model has more *time* to focus on the rest of your task(s).
 
+Prompt engineering typically relies on eyeballing model outputs after each change. A tweak that seems to improve one case might silently degrade others.
+
+TeaLeaves captures how the model distributes attention across every region of your prompt at every layer, so you can measure whether a change helped or hurt, and where in the forward pass the effect occurs.
+
+The pipeline was originally built to tune the subcortical prompt for [Mira](https://github.com/taylorsatula/mira-OSS), a persistent digital entity with self-directed memory and context window management. Because subcortical runs on a small model in a single forward pass with no reasoning, every word in the prompt either drives attention or wastes it. The techniques generalize to any prompt and any model.
+
+---
 TeaLeaves is designed for LLM-as-a-first-class-citize usage. There are runbooks and documentation your Model can invoke. The repo exposes all the functionality you need to input data into a testbed (local) model, recieve the output, and have Claude or whoever interpret the floats.
-
-The reason for development was that I needed: entity extraction, relevant passage filtering, complexity classification, and query expansion on 4k tokens in 750ms or less RTT. That means using models that are not built for 5 disparate tasks in one yield. TeaLeaves was my solution. Sometimes it results in FUNKY looking prompts (to the human eye at least) but they're very effective.
-
 ---
 
 Mechanistic interpretability pipeline for prompts. Annotate regions in any prompt, run attention capture and logit lens on any HuggingFace model, get back heatmaps, cooking curves, animated layer sweeps, and comparative analysis showing what changed and where.
